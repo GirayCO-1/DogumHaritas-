@@ -28,6 +28,12 @@ export default function RootLayout() {
     if (hydrated) SplashScreen.hideAsync().catch(() => {});
   }, [hydrated]);
 
+  // Depolama okunamazsa bile açılış ekranında takılı kalma
+  useEffect(() => {
+    const id = setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 3000);
+    return () => clearTimeout(id);
+  }, []);
+
   return (
     <ThemeProvider value={NavTheme}>
       <StatusBar style="light" />

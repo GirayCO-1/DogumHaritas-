@@ -5,8 +5,6 @@
  *  - direct : Kullanıcının kendi Anthropic API anahtarı (cihazda güvenli saklanır)
  *  - proxy  : Anahtarı sunucuda tutan küçük bir vekil uç nokta (server/ klasörüne bak)
  */
-import Anthropic from '@anthropic-ai/sdk';
-
 import type { Settings } from '@/store/useAppStore';
 
 import { buildUserPrompt, SYSTEM_PROMPT, type InterpretationKind } from './prompts';
@@ -38,7 +36,25 @@ export class AiError extends Error {
   }
 }
 
+type AnthropicModule = typeof import('@anthropic-ai/sdk');
+let sdkPromise: Promise<AnthropicModule> | null = null;
+
+/**
+ * SDK yalnızca ilk yorum isteğinde yüklenir: uygulama açılışını yavaşlatmaz ve
+ * bir ortamda yüklenemezse (eski Hermes vb.) yalnızca AI özelliği devre dışı kalır.
+ */
+function loadSdk(): Promise<AnthropicModule> {
+  if (!sdkPromise) {
+    sdkPromise = import('@anthropic-ai/sdk').catch((e: unknown) => {
+      sdkPromise = null;
+      throw new AiError(`Claude istemcisi yüklenemedi: ${e instanceof Error ? e.message : String(e)}`, 'unknown');
+    });
+  }
+  return sdkPromise;
+}
+
 export async function interpretDirect(apiKey: string, req: InterpretRequest): Promise<InterpretResult> {
+  const { default: Anthropic } = await loadSdk();
   const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true, maxRetries: 2 });
   try {
     const response = await client.beta.messages.create({

@@ -15,14 +15,28 @@ Astromatik benzeri, Türkçe bir **doğum haritası (natal chart) uygulaması**.
 - **Yapay zekâ yorumu** — natal / günlük / ilişki yorumu (Claude, `claude-opus-5`); kendi API anahtarınla ya da sunucu vekiliyle
 - **Şehir veritabanı** — 27.000+ yerleşim (Türkiye'nin tüm il ve ilçeleri dahil), her biri için IANA saat dilimi; tarihsel yaz saati kuralları otomatik uygulanır
 
-## Kurulum
+## Kurulum ve Expo Go ile test
+
+Gereksinimler: Node 20+ (22 önerilir), telefonda [Expo Go](https://expo.dev/go) (SDK 57).
 
 ```bash
+git clone https://github.com/GirayCO-1/DogumHaritas-.git
+cd DogumHaritas-
+git checkout claude/birth-chart-viewer-app-vn294e
 npm install
-npx expo start          # QR kodu Expo Go ile okut ya da a / i / w tuşları
+npx expo start
 ```
 
-> `expo-secure-store` native modül içerdiği için en doğru sonuç için bir **development build** kullan (`npx expo run:android`). Expo Go'da da çalışır; anahtar saklama orada yedek depoya düşer.
+Terminalde çıkan QR kodu **Android'de Expo Go uygulamasından**, **iPhone'da Kamera'dan** okut. Bilgisayar ve telefon aynı Wi-Fi'da olmalı.
+
+| Sorun | Çözüm |
+|---|---|
+| Telefon bağlanamıyor (farklı ağ, kurumsal Wi-Fi, VPN) | `npx expo start --tunnel` (ilk seferde `@expo/ngrok` kurulumunu onayla) |
+| "Project is incompatible with this version of Expo Go" | Telefondaki Expo Go'yu güncelle; proje SDK 57 |
+| Metro çok yavaş / cache sorunu | `npx expo start --clear` |
+| Web'de hızlı bakmak istiyorsan | `npx expo start --web` ya da terminalde `w` |
+
+Tüm özellikler Expo Go'da çalışır (SVG çark, şehir arama, transitler, sinastri, Claude yorumu). `expo-secure-store` Expo Go'da da desteklenir; mağaza sürümü için yine de bir **development build** (`npx expo run:android`) ya da EAS derlemesi önerilir.
 
 ### Komutlar
 
