@@ -8,3 +8,5 @@ export * from './aspects';
 export * from './dignities';
 export * from './chart';
 export * from './format';
+export * from './transits';
+export * from './synastry';

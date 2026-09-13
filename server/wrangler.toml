@@ -1,0 +1,13 @@
+name = "dogum-haritasi-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-06-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Gizli değişkenler (repoya YAZMA):
+#   wrangler secret put ANTHROPIC_API_KEY
+#   wrangler secret put APP_TOKEN          # isteğe bağlı paylaşımlı sır
+#
+# Düz değişkenler:
+[vars]
+# Web sürümü için izinli origin'ler; mobil uygulama için gerekmez.
+ALLOWED_ORIGINS = "*"

@@ -223,10 +223,23 @@ export interface TransitAspect extends Aspect {
   transitHouse: number;
 }
 
+export interface MoonPhase {
+  /** Güneş–Ay açısı 0–360 */
+  angle: number;
+  /** Aydınlanma oranı 0–1 */
+  illumination: number;
+  name: string;
+  /** Ay'ın bulunduğu burç */
+  sign: number;
+}
+
 export interface TransitReport {
   date: Date;
   transitPositions: BodyPosition[];
   aspects: TransitAspect[];
+  moonPhase: MoonPhase;
+  /** Bugün retro olan transit gezegenler */
+  retrogrades: PlanetId[];
 }
 
 export interface SynastryAspect extends Aspect {

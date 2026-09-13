@@ -1,10 +1,12 @@
-import { getAllPlanets } from 'ephemeris';
+import { getAllPlanets, getPlanet } from 'ephemeris';
 import { describe, expect, it } from 'vitest';
 
 import { computeAspects } from '../../src/astro/aspects';
 import { computeNatalChart, findBody } from '../../src/astro/chart';
 import { dignityOf } from '../../src/astro/dignities';
 import {
+  CHIRON_RANGE,
+  chironPosition,
   computeAllBodies,
   localSiderealTime,
   makeTime,
@@ -403,5 +405,39 @@ describe('natal chart', () => {
     const chart = computeNatalChart(sample, { houseSystem: 'whole' });
     expect(chart.houses.system).toBe('whole');
     expect(chart.houses.cusps[0] % 30).toBeCloseTo(0, 9);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+describe('chiron tablosu', () => {
+  it('interpolasyon kaynak efemerisle 0.002° içinde uyuşur (1900–2100)', () => {
+    // Tablo örnekleme noktalarına düşmeyen rastgele anlar
+    const dates = [
+      Date.UTC(1923, 9, 29, 9, 5),
+      Date.UTC(1955, 1, 24, 23, 59),
+      Date.UTC(1977, 10, 1, 3, 3),
+      Date.UTC(1990, 5, 15, 11, 30),
+      Date.UTC(2007, 6, 7, 7, 7),
+      Date.UTC(2024, 0, 1, 12, 34),
+      Date.UTC(2061, 3, 12, 18, 0),
+      Date.UTC(2099, 11, 30, 5, 0),
+    ];
+    for (const ms of dates) {
+      const t = makeTime(new Date(ms));
+      const eps = trueObliquity(t);
+      const ours = chironPosition(t, eps);
+      const dateTT = new Date(ms + (t.tt - t.ut) * 86400000);
+      const ref = getPlanet('chiron', dateTT, 0, 0, 0).observed.chiron.apparentLongitudeDd;
+      expect(angularDistance(ours.longitude, ref), new Date(ms).toISOString()).toBeLessThan(0.002);
+    }
+    expect(CHIRON_RANGE.start.getUTCFullYear()).toBe(1900);
+    expect(CHIRON_RANGE.end.getUTCFullYear()).toBeGreaterThanOrEqual(2099);
+  });
+
+  it('retro dönemi doğru: Chiron 2023 Ağustos–Aralık retro', () => {
+    const t = makeTime(new Date(Date.UTC(2023, 9, 15)));
+    expect(chironPosition(t, trueObliquity(t)).speed).toBeLessThan(0);
+    const t2 = makeTime(new Date(Date.UTC(2024, 2, 15)));
+    expect(chironPosition(t2, trueObliquity(t2)).speed).toBeGreaterThan(0);
   });
 });

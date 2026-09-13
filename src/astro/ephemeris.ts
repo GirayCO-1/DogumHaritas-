@@ -1,11 +1,12 @@
 /**
  * Gök cisimlerinin görünür, jeosantrik, tarihin gerçek ekliptiğine göre
  * (tropikal) boylamları. Ana motor: astronomy-engine (MIT, ±1' hassasiyet).
- * Chiron için Moshier tabanlı `ephemeris` paketi kullanılır.
+ * Chiron için derleme zamanında üretilen gömülü tablo kullanılır
+ * (scripts/build-chiron.mjs; kaynak Moshier efemerisi).
  */
 import * as Astronomy from 'astronomy-engine';
-import { getPlanet } from 'ephemeris';
 
+import chironTable from '../data/chiron.json';
 import { atan2D, eclipticToEquatorial, julianCenturies, norm360 } from './math';
 import type { NodeType, PlanetId } from './types';
 
@@ -148,26 +149,56 @@ export function lilithPosition(time: Astronomy.AstroTime, eps: number): RawBody 
 }
 
 /* ------------------------------------------------------------------ */
-/* Chiron (Moshier / ephemeris paketi)                                 */
+/* Chiron — gömülü tablo (scripts/build-chiron.mjs) + kübik interpolasyon */
 /* ------------------------------------------------------------------ */
 
-function chironRaw(time: Astronomy.AstroTime): { lon: number; lat: number; dist?: number } {
-  // ephemeris paketi verilen Date'i TT sayar; UTC → TT için ΔT eklenir
-  const deltaTDays = time.tt - time.ut;
-  const dateTT = new Date(time.date.getTime() + deltaTDays * 86400000);
-  const res = getPlanet('chiron', dateTT, 0, 0, 0);
-  const obs = res.observed.chiron;
-  const pos = obs?.raw?.position;
-  const lat = typeof pos?.apparentLatitude === 'number' ? pos.apparentLatitude : 0;
-  const distKm = obs?.geocentricDistanceKm;
-  const dist = typeof distKm === 'number' ? distKm / 149597870.7 : undefined;
-  return { lon: norm360(obs.apparentLongitudeDd), lat, dist };
+interface ChironTable {
+  startMs: number;
+  stepDays: number;
+  /** Uçlardaki yedek örnek sayısı (interpolasyon payı) */
+  pad: number;
+  count: number;
+  /** Sarmalanmamış (sürekli) boylam */
+  lon: number[];
+  lat: number[];
+}
+
+const CHIRON = chironTable as ChironTable;
+
+/** Uniform ızgarada Catmull-Rom interpolasyonu */
+function catmullRom(arr: number[], x: number): number {
+  const n = arr.length;
+  const xi = Math.min(Math.max(x, 0), n - 1.000001);
+  const i = Math.floor(xi);
+  const u = xi - i;
+  const p0 = arr[Math.max(i - 1, 0)];
+  const p1 = arr[i];
+  const p2 = arr[Math.min(i + 1, n - 1)];
+  const p3 = arr[Math.min(i + 2, n - 1)];
+  return (
+    0.5 *
+    (2 * p1 +
+      (-p0 + p2) * u +
+      (2 * p0 - 5 * p1 + 4 * p2 - p3) * u * u +
+      (-p0 + 3 * p1 - 3 * p2 + p3) * u * u * u)
+  );
+}
+
+/** Tablonun güvenilir kapsadığı aralık (UTC); dışında uç değer döner */
+export const CHIRON_RANGE = {
+  start: new Date(CHIRON.startMs + CHIRON.pad * CHIRON.stepDays * 86400000),
+  end: new Date(CHIRON.startMs + (CHIRON.count - 1 - CHIRON.pad) * CHIRON.stepDays * 86400000),
+};
+
+function chironRaw(time: Astronomy.AstroTime): { lon: number; lat: number } {
+  const x = (time.date.getTime() - CHIRON.startMs) / (CHIRON.stepDays * 86400000);
+  return { lon: norm360(catmullRom(CHIRON.lon, x)), lat: catmullRom(CHIRON.lat, x) };
 }
 
 export function chironPosition(time: Astronomy.AstroTime, eps: number): RawBody {
   const now = chironRaw(time);
   const speed = withSpeed((t) => chironRaw(t).lon, time, 0.5);
-  return finish(now.lon, now.lat, speed, eps, now.dist);
+  return finish(now.lon, now.lat, speed, eps);
 }
 
 /* ------------------------------------------------------------------ */

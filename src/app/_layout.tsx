@@ -1,18 +1,49 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { Colors } from '@/constants/theme';
+import { useAppStore } from '@/store/useAppStore';
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+const NavTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: Colors.primary,
+    background: Colors.background,
+    card: Colors.background,
+    text: Colors.text,
+    border: Colors.border,
+    notification: Colors.accent,
+  },
+};
+
+export default function RootLayout() {
+  const hydrated = useAppStore((s) => s.hydrated);
+
+  useEffect(() => {
+    if (hydrated) SplashScreen.hideAsync().catch(() => {});
+  }, [hydrated]);
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
+    <ThemeProvider value={NavTheme}>
+      <StatusBar style="light" />
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: Colors.background },
+          headerTintColor: Colors.text,
+          headerTitleStyle: { fontWeight: '700' },
+          headerShadowVisible: false,
+          contentStyle: { backgroundColor: Colors.background },
+        }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="profile/[id]" options={{ title: 'Profil', presentation: 'modal' }} />
+        <Stack.Screen name="settings" options={{ title: 'Ayarlar' }} />
+        <Stack.Screen name="interpret" options={{ title: 'Yapay Zekâ Yorumu' }} />
+      </Stack>
     </ThemeProvider>
   );
 }

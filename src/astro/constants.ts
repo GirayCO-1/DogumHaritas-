@@ -18,18 +18,18 @@ export interface SignInfo {
 }
 
 export const SIGNS: readonly SignInfo[] = [
-  { index: 0, key: 'aries', name: 'Koç', symbol: '♈', element: 'fire', modality: 'cardinal', ruler: 'mars' },
-  { index: 1, key: 'taurus', name: 'Boğa', symbol: '♉', element: 'earth', modality: 'fixed', ruler: 'venus' },
-  { index: 2, key: 'gemini', name: 'İkizler', symbol: '♊', element: 'air', modality: 'mutable', ruler: 'mercury' },
-  { index: 3, key: 'cancer', name: 'Yengeç', symbol: '♋', element: 'water', modality: 'cardinal', ruler: 'moon' },
-  { index: 4, key: 'leo', name: 'Aslan', symbol: '♌', element: 'fire', modality: 'fixed', ruler: 'sun' },
-  { index: 5, key: 'virgo', name: 'Başak', symbol: '♍', element: 'earth', modality: 'mutable', ruler: 'mercury' },
-  { index: 6, key: 'libra', name: 'Terazi', symbol: '♎', element: 'air', modality: 'cardinal', ruler: 'venus' },
-  { index: 7, key: 'scorpio', name: 'Akrep', symbol: '♏', element: 'water', modality: 'fixed', ruler: 'mars', modernRuler: 'pluto' },
-  { index: 8, key: 'sagittarius', name: 'Yay', symbol: '♐', element: 'fire', modality: 'mutable', ruler: 'jupiter' },
-  { index: 9, key: 'capricorn', name: 'Oğlak', symbol: '♑', element: 'earth', modality: 'cardinal', ruler: 'saturn' },
-  { index: 10, key: 'aquarius', name: 'Kova', symbol: '♒', element: 'air', modality: 'fixed', ruler: 'saturn', modernRuler: 'uranus' },
-  { index: 11, key: 'pisces', name: 'Balık', symbol: '♓', element: 'water', modality: 'mutable', ruler: 'jupiter', modernRuler: 'neptune' },
+  { index: 0, key: 'aries', name: 'Koç', symbol: '♈\uFE0E', element: 'fire', modality: 'cardinal', ruler: 'mars' },
+  { index: 1, key: 'taurus', name: 'Boğa', symbol: '♉\uFE0E', element: 'earth', modality: 'fixed', ruler: 'venus' },
+  { index: 2, key: 'gemini', name: 'İkizler', symbol: '♊\uFE0E', element: 'air', modality: 'mutable', ruler: 'mercury' },
+  { index: 3, key: 'cancer', name: 'Yengeç', symbol: '♋\uFE0E', element: 'water', modality: 'cardinal', ruler: 'moon' },
+  { index: 4, key: 'leo', name: 'Aslan', symbol: '♌\uFE0E', element: 'fire', modality: 'fixed', ruler: 'sun' },
+  { index: 5, key: 'virgo', name: 'Başak', symbol: '♍\uFE0E', element: 'earth', modality: 'mutable', ruler: 'mercury' },
+  { index: 6, key: 'libra', name: 'Terazi', symbol: '♎\uFE0E', element: 'air', modality: 'cardinal', ruler: 'venus' },
+  { index: 7, key: 'scorpio', name: 'Akrep', symbol: '♏\uFE0E', element: 'water', modality: 'fixed', ruler: 'mars', modernRuler: 'pluto' },
+  { index: 8, key: 'sagittarius', name: 'Yay', symbol: '♐\uFE0E', element: 'fire', modality: 'mutable', ruler: 'jupiter' },
+  { index: 9, key: 'capricorn', name: 'Oğlak', symbol: '♑\uFE0E', element: 'earth', modality: 'cardinal', ruler: 'saturn' },
+  { index: 10, key: 'aquarius', name: 'Kova', symbol: '♒\uFE0E', element: 'air', modality: 'fixed', ruler: 'saturn', modernRuler: 'uranus' },
+  { index: 11, key: 'pisces', name: 'Balık', symbol: '♓\uFE0E', element: 'water', modality: 'mutable', ruler: 'jupiter', modernRuler: 'neptune' },
 ] as const;
 
 export const ELEMENT_NAMES: Record<Element, string> = {
@@ -83,8 +83,8 @@ export const BODIES: Record<BodyId, BodyInfo> = {
   sun: { id: 'sun', name: 'Güneş', shortName: 'Gün', symbol: '☉', physical: true, weight: 3 },
   moon: { id: 'moon', name: 'Ay', shortName: 'Ay', symbol: '☽', physical: true, weight: 3 },
   mercury: { id: 'mercury', name: 'Merkür', shortName: 'Mer', symbol: '☿', physical: true, weight: 2 },
-  venus: { id: 'venus', name: 'Venüs', shortName: 'Ven', symbol: '♀', physical: true, weight: 2 },
-  mars: { id: 'mars', name: 'Mars', shortName: 'Mar', symbol: '♂', physical: true, weight: 2 },
+  venus: { id: 'venus', name: 'Venüs', shortName: 'Ven', symbol: '♀\uFE0E', physical: true, weight: 2 },
+  mars: { id: 'mars', name: 'Mars', shortName: 'Mar', symbol: '♂\uFE0E', physical: true, weight: 2 },
   jupiter: { id: 'jupiter', name: 'Jüpiter', shortName: 'Jüp', symbol: '♃', physical: true, weight: 1.5 },
   saturn: { id: 'saturn', name: 'Satürn', shortName: 'Sat', symbol: '♄', physical: true, weight: 1.5 },
   uranus: { id: 'uranus', name: 'Uranüs', shortName: 'Ura', symbol: '♅', physical: true, weight: 1 },
