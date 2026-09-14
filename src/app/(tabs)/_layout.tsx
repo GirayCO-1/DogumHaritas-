@@ -34,7 +34,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="transits"
         options={{
-          title: 'Bugün',
+          title: 'Gökyüzü',
           tabBarIcon: ({ color, size }) => <Ionicons name="sunny" size={size} color={color} />,
         }}
       />

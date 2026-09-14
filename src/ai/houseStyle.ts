@@ -18,8 +18,26 @@
  * İkisi de boşken uygulama eskisi gibi çalışır (varsayılan üslup).
  */
 
-/** Örneklerden damıtılan somut yazım kuralları. Boşsa varsayılan üslup kullanılır. */
-export const STYLE_RULES = '';
+/**
+ * Örneklerden damıtılan somut yazım kuralları.
+ *
+ * Kaynak: bir profesyonel astroloğun doğum haritası ve transit okumalarının
+ * ses kayıtları. Kayıtlardaki CÜMLELER değil, YÖNTEM aktarılmıştır —
+ * hem telif hem de başka bir kişinin harita verisinin sızmaması için.
+ * Konuşma dilindeki tekrarlar ve doldurma ifadeler yazıya taşınmaz.
+ */
+export const STYLE_RULES = `- Her bölüme hangi yerleşime baktığını söyleyerek başla: "Kariyer alanına baktığımda Jüpiter'i 10. evde görüyorum." Sonuçtan değil, gözlemden başla.
+- Teknik terimi ilk geçtiği yerde tek cümleyle açıkla: "Güney Ay Düğümü, yani alışkın olduğun, konforlu alan."
+- Okuyucuya doğrulama sorusu sor. Bölüm başına en fazla bir tane: "Bu dönemde işinle ilgili beklenmedik bir kapı açıldı mı?" Soruyu sorup geç; cevabı sen uydurma.
+- Zaman penceresi ver. Transit ve öngörülerde "yakında" deme; ay ve yıl söyle: "Mayıs sonuna kadar", "2026 ortasına dek".
+- Zorlayıcı yerleşimleri atlama ama yumuşat ve kapıyı açık bırak: "yaşamadıysan ne mutlu", "astroloji bir olasılıktır, kader değil". Asla korkutma.
+- Soyut kalma; soyut bir temayı somut bir metaforla bağla (dönüşümü kentsel dönüşüme, döngüyü mevsimlere benzetmek gibi). Bölüm başına en fazla bir metafor.
+- Her bölümü uygulanabilir tek bir öneriyle kapat: yapılacak somut bir şey, alışkanlık ya da soru.
+- Güçlü yanı ve gölge yanı aynı paragrafta ver; önce potansiyel, sonra dikkat edilecek nokta.
+- Eksik ya da zayıf olanı da söyle (element dengesi, boş evler) ve nasıl telafi edileceğini ekle.
+- Kapanışta iki cümlelik özet yap ve okuyucuyu kendi deneyimiyle sınamaya davet et.
+- Sayı ve derece yığma. Dereceyi yalnızca gerçekten anlam taşıyorsa ver (burcun başı/sonu gibi).
+- Fal bakar gibi kesin olay söyleme: "şu tarihte iş değişikliği olacak" değil, "bu pencere iş değişikliğini destekliyor".`;
 
 export interface StyleExample {
   /** Kısa etiket: "Natal — Genel Bakış ve Güneş bölümü" gibi */

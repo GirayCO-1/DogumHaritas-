@@ -3,8 +3,10 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, useWindowDimensions, View } from 'react-native';
 
+import { THEMES, THEME_ORDER, type InterpretationTheme } from '@/ai/prompts';
 import { BODIES, SIGNS } from '@/astro/constants';
 import { formatLocal } from '@/astro/time';
+import { DateJumpModal } from '@/components/DateJumpModal';
 import { AspectList } from '@/components/ChartTables';
 import { ChartWheel } from '@/components/ChartWheel';
 import { BodyGlyph, SignGlyph } from '@/components/Glyph';
@@ -16,6 +18,19 @@ import { useAppStore } from '@/store/useAppStore';
 
 const DAY = 86400000;
 
+function toIsoDay(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Seçili tarih bugüne göre nerede duruyor */
+function dayLabelFor(offsetDays: number, date: Date): string {
+  if (offsetDays === 0) return 'Bugün';
+  if (offsetDays === 1) return 'Yarın';
+  if (offsetDays === -1) return 'Dün';
+  if (Math.abs(offsetDays) <= 30) return `${offsetDays > 0 ? '+' : ''}${offsetDays} gün`;
+  return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
 export default function TransitsScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
@@ -24,6 +39,8 @@ export default function TransitsScreen() {
   const hydrated = useAppStore((s) => s.hydrated);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [offsetDays, setOffsetDays] = useState(0);
+  const [theme, setTheme] = useState<InterpretationTheme>('general');
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   // Sekmeye her dönüşte "bugün" tazelensin
   useFocusEffect(
@@ -56,27 +73,42 @@ export default function TransitsScreen() {
   }
 
   const wheelSize = Math.min(width - Spacing.three * 2, MaxContentWidth - Spacing.three * 2, 460);
-  const dayLabel = offsetDays === 0 ? 'Bugün' : offsetDays === 1 ? 'Yarın' : offsetDays === -1 ? 'Dün' : `${offsetDays > 0 ? '+' : ''}${offsetDays} gün`;
+  const dayLabel = dayLabelFor(offsetDays, date);
+  const isToday = offsetDays === 0;
+  // Bugünden uzak tarihlerde günlük yorum değil, dönem öngörüsü istenir
+  const kind = Math.abs(offsetDays) > 3 ? 'forecast' : 'daily';
+
+  /** Seçilen takvim gününü bugüne göre gün farkına çevirir */
+  const jumpTo = (target: Date) => {
+    const a = new Date(now);
+    a.setHours(12, 0, 0, 0);
+    const b = new Date(target);
+    b.setHours(12, 0, 0, 0);
+    setOffsetDays(Math.round((b.getTime() - a.getTime()) / DAY));
+  };
 
   return (
     <Screen>
-      <T variant="label">Günlük Transitler</T>
+      <T variant="label">Gökyüzü</T>
       <ProfileChips selectedId={profile.id} onSelect={setProfileId} />
 
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
-          <Pressable onPress={() => setOffsetDays((d) => d - 1)} hitSlop={10} style={{ padding: 6 }}>
+          <Pressable onPress={() => setOffsetDays((d) => d - 1)} hitSlop={10} style={{ padding: 6 }} accessibilityLabel="Önceki gün">
             <Ionicons name="chevron-back" size={22} color={Colors.textSecondary} />
           </Pressable>
-          <View style={{ alignItems: 'center' }}>
-            <T variant="heading">{dayLabel}</T>
+          <Pressable onPress={() => setPickerOpen(true)} style={{ alignItems: 'center', flex: 1 }} accessibilityLabel="Tarih seç">
+            <Row gap={6}>
+              <T variant="heading">{dayLabel}</T>
+              <Ionicons name="calendar-outline" size={16} color={Colors.primary} />
+            </Row>
             <T variant="small">{chart ? formatLocal(date, chart.meta.timeZone) : ''}</T>
-          </View>
-          <Pressable onPress={() => setOffsetDays((d) => d + 1)} hitSlop={10} style={{ padding: 6 }}>
+          </Pressable>
+          <Pressable onPress={() => setOffsetDays((d) => d + 1)} hitSlop={10} style={{ padding: 6 }} accessibilityLabel="Sonraki gün">
             <Ionicons name="chevron-forward" size={22} color={Colors.textSecondary} />
           </Pressable>
         </Row>
-        {offsetDays !== 0 && (
+        {!isToday && (
           <Row style={{ justifyContent: 'center' }}>
             <Chip label="Bugüne dön" icon="today-outline" onPress={() => setOffsetDays(0)} />
           </Row>
@@ -127,17 +159,30 @@ export default function TransitsScreen() {
             />
           </View>
 
-          <Button
-            title="Günün Yorumunu Al"
-            icon="sparkles"
-            variant="secondary"
-            onPress={() => router.push({ pathname: '/interpret', params: { kind: 'daily', a: profile.id, offset: String(offsetDays) } })}
-          />
+          <Card>
+            <T variant="label">Yorum Odağı</T>
+            <Row gap={Spacing.two} style={{ flexWrap: 'wrap' }}>
+              {THEME_ORDER.map((t) => (
+                <Chip key={t} label={THEMES[t].name} active={theme === t} onPress={() => setTheme(t)} />
+              ))}
+            </Row>
+            <T variant="small">{THEMES[theme].tagline}</T>
+            <Button
+              title={isToday ? 'Günün Yorumunu Al' : 'Bu Tarih İçin Öngörü Al'}
+              icon="sparkles"
+              onPress={() =>
+                router.push({
+                  pathname: '/interpret',
+                  params: { kind, a: profile.id, offset: String(offsetDays), date: toIsoDay(date), theme },
+                })
+              }
+            />
+          </Card>
 
-          <T variant="heading">Transit → Natal Açılar</T>
+          <T variant="heading">Gökyüzü → Natal Açılar</T>
           <AspectList aspects={report.aspects} labelA="Transit" labelB="Natal" emptyText="Bu gün için belirgin bir transit açısı yok." />
 
-          <T variant="heading">Transit Gezegenler</T>
+          <T variant="heading">O Tarihteki Gezegenler</T>
           <Card style={{ gap: 6 }}>
             {report.transitPositions.map((p) => (
               <Row key={p.id} gap={10}>
@@ -155,6 +200,7 @@ export default function TransitsScreen() {
           </Card>
         </>
       )}
+      <DateJumpModal visible={pickerOpen} value={date} onClose={() => setPickerOpen(false)} onSelect={jumpTo} />
     </Screen>
   );
 }

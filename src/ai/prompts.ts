@@ -12,6 +12,7 @@ import type { Aspect, BodyPosition, NatalChart, SynastryReport, TransitReport } 
 import type { InterpretationKind } from './promptText';
 
 export { buildUserPrompt, SYSTEM_PROMPT, type InterpretationKind } from './promptText';
+export { THEMES, THEME_ORDER, type InterpretationTheme, type ThemeInfo } from './themes';
 
 function body(p: BodyPosition): string {
   const retro = p.retrograde ? ' (retro)' : '';
@@ -58,9 +59,27 @@ export function serializeChart(chart: NatalChart, label = 'Doğum Haritası'): s
   return lines.join('\n');
 }
 
-export function serializeTransits(report: TransitReport, natal: NatalChart): string {
+/**
+ * Seçilen tarihe göre gökyüzü. `from` verilirse (öngörü) modele tarihin
+ * bugünden ne kadar uzak olduğu da söylenir; böylece hızlı cisimlere
+ * gereğinden fazla anlam yüklemez.
+ */
+export function serializeTransits(report: TransitReport, natal: NatalChart, from?: Date): string {
   const lines: string[] = [];
   lines.push(`# Transitler — ${formatLocal(report.date, natal.meta.timeZone)}`);
+  if (from) {
+    const days = Math.round((report.date.getTime() - from.getTime()) / 86400000);
+    const abs = Math.abs(days);
+    const when =
+      abs < 1
+        ? 'bugün'
+        : abs < 45
+          ? `bugünden ${abs} gün ${days > 0 ? 'sonra' : 'önce'}`
+          : abs < 400
+            ? `bugünden yaklaşık ${Math.round(abs / 30)} ay ${days > 0 ? 'sonra' : 'önce'}`
+            : `bugünden yaklaşık ${(abs / 365.25).toFixed(1)} yıl ${days > 0 ? 'sonra' : 'önce'}`;
+    lines.push(`Bu tarih ${when}.${abs >= 45 ? ' Ay ve diğer hızlı cisimler yalnızca o güne aittir; dönemi yavaş gezegenler tanımlar.' : ''}`);
+  }
   lines.push(`Ay evresi: ${report.moonPhase.name} (${Math.round(report.moonPhase.illumination * 100)}% aydınlık), Ay ${SIGNS[report.moonPhase.sign].name} burcunda`);
   if (report.retrogrades.length) lines.push(`Retro gezegenler: ${report.retrogrades.map((id) => BODIES[id].name).join(', ')}`);
   lines.push('');

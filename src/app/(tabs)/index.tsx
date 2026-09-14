@@ -3,10 +3,11 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, useWindowDimensions, View } from 'react-native';
 
+import { THEMES, THEME_ORDER, type InterpretationTheme } from '@/ai/prompts';
 import { HOUSE_SYSTEM_NAMES } from '@/astro/constants';
 import type { BodyId } from '@/astro/types';
 import { ChartWheel } from '@/components/ChartWheel';
-import { AspectGrid, AspectList, BalanceBars, BigThree, BodyDetail, HouseTable, PlanetTable } from '@/components/ChartTables';
+import { AspectGrid, AspectList, BalanceBars, BigThree, BodyDetail, ElementStrip, HouseTable, PlanetTable } from '@/components/ChartTables';
 import { ProfileChips, ProfileHeader } from '@/components/ProfileSwitcher';
 import { Button, Card, Chip, EmptyState, Row, Screen, T } from '@/components/ui';
 import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -25,6 +26,7 @@ export default function ChartScreen() {
   const chart = useNatalChart(profile);
   const [selected, setSelected] = useState<BodyId | null>(null);
   const [section, setSection] = useState<Section>('planets');
+  const [theme, setTheme] = useState<InterpretationTheme>('general');
   const [showAspects, setShowAspects] = useState(true);
 
   if (!hydrated) return <Screen scroll={false}>{null}</Screen>;
@@ -62,6 +64,7 @@ export default function ChartScreen() {
       ) : (
         <>
           <BigThree chart={chart} />
+          <ElementStrip elements={chart.elements} />
 
           <View style={{ alignItems: 'center' }}>
             <ChartWheel chart={chart} size={wheelSize} showAspects={showAspects} showMinor={showMinor} selected={selected} onSelect={setSelected} />
@@ -75,12 +78,20 @@ export default function ChartScreen() {
 
           {selected && <BodyDetail chart={chart} id={selected} />}
 
-          <Button
-            title="Yapay Zekâ ile Yorumla"
-            icon="sparkles"
-            variant="secondary"
-            onPress={() => router.push({ pathname: '/interpret', params: { kind: 'natal', a: profile.id } })}
-          />
+          <Card>
+            <T variant="label">Yorum Odağı</T>
+            <Row gap={Spacing.two} style={{ flexWrap: 'wrap' }}>
+              {THEME_ORDER.map((t) => (
+                <Chip key={t} label={THEMES[t].name} active={theme === t} onPress={() => setTheme(t)} />
+              ))}
+            </Row>
+            <T variant="small">{THEMES[theme].tagline}</T>
+            <Button
+              title="Yapay Zekâ ile Yorumla"
+              icon="sparkles"
+              onPress={() => router.push({ pathname: '/interpret', params: { kind: 'natal', a: profile.id, theme } })}
+            />
+          </Card>
 
           <Row gap={Spacing.two} style={{ flexWrap: 'wrap' }}>
             {(

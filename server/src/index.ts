@@ -11,6 +11,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 import { buildUserPrompt, SYSTEM_PROMPT, type InterpretationKind } from '../../src/ai/promptText';
+import { THEME_ORDER, type InterpretationTheme } from '../../src/ai/themes';
 
 export interface Env {
   ANTHROPIC_API_KEY: string;
@@ -21,7 +22,7 @@ export interface Env {
 }
 
 const MODEL = 'claude-opus-5';
-const KINDS: InterpretationKind[] = ['natal', 'daily', 'synastry'];
+const KINDS: InterpretationKind[] = ['natal', 'daily', 'forecast', 'synastry'];
 const EFFORTS = ['low', 'medium', 'high'] as const;
 
 function cors(env: Env, req: Request): Record<string, string> {
@@ -53,7 +54,7 @@ export default {
       return json({ error: 'Yetkisiz' }, 401, headers);
     }
 
-    let body: { kind?: string; data?: string; effort?: string };
+    let body: { kind?: string; data?: string; effort?: string; theme?: string };
     try {
       body = await req.json();
     } catch {
@@ -61,6 +62,8 @@ export default {
     }
     const kind = KINDS.find((k) => k === body.kind);
     const effort = EFFORTS.find((e) => e === body.effort) ?? 'medium';
+    const theme: InterpretationTheme = THEME_ORDER.find((t) => t === body.theme) ?? 'general';
+  const theme: InterpretationTheme = THEME_ORDER.find((t) => t === body.theme) ?? 'general';
     if (!kind || typeof body.data !== 'string' || body.data.length < 50 || body.data.length > 60_000) {
       return json({ error: 'Geçersiz istek' }, 400, headers);
     }
@@ -75,7 +78,7 @@ export default {
         thinking: { type: 'adaptive' },
         output_config: { effort },
         system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
-        messages: [{ role: 'user', content: buildUserPrompt(kind, body.data) }],
+        messages: [{ role: 'user', content: buildUserPrompt(kind, body.data, theme) }],
       });
       if (response.stop_reason === 'refusal') return json({ error: 'İstek reddedildi' }, 422, headers);
       let text = '';

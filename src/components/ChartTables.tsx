@@ -319,6 +319,38 @@ export function BalanceBars({ elements, modalities }: { elements: ElementBalance
   );
 }
 
+/**
+ * Kompakt element şeridi — ana ekranda görünsün diye.
+ * Element dengesi haritanın en çabuk okunan göstergelerinden biri;
+ * "Denge" sekmesine gömülü kalmamalı.
+ */
+export function ElementStrip({ elements }: { elements: ElementBalance }) {
+  const total = Object.values(elements).reduce((a, b) => a + b, 0) || 1;
+  const keys = Object.keys(elements) as (keyof ElementBalance)[];
+  const weakest = keys.reduce((lo, k) => (elements[k] < elements[lo] ? k : lo));
+  return (
+    <Card style={{ gap: 8 }}>
+      <Row style={{ justifyContent: 'space-between' }}>
+        <T variant="label">Element Dengesi</T>
+        <T variant="caption">en zayıf: {ELEMENT_NAMES[weakest]}</T>
+      </Row>
+      <Row gap={6}>
+        {keys.map((k) => {
+          const pct = Math.round((elements[k] / total) * 100);
+          return (
+            <View key={k} style={{ flex: Math.max(1, elements[k]), gap: 4 }}>
+              <View style={{ height: 6, borderRadius: 3, backgroundColor: ElementColors[k] }} />
+              <T variant="caption" color={ElementColors[k]} numberOfLines={1}>
+                {ELEMENT_NAMES[k]} %{pct}
+              </T>
+            </View>
+          );
+        })}
+      </Row>
+    </Card>
+  );
+}
+
 /** Üçlü özet: Güneş / Ay / Yükselen */
 export function BigThree({ chart }: { chart: NatalChart }) {
   const items: { label: string; id: BodyId; sign: number }[] = [

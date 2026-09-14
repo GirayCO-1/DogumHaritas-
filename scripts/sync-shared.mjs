@@ -14,7 +14,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-export const SHARED_FILES = ['promptText.ts', 'houseStyle.ts'];
+export const SHARED_FILES = ['promptText.ts', 'houseStyle.ts', 'themes.ts'];
 const OUT_DIR = resolve(root, 'supabase/functions/_shared');
 
 const BANNER = `// ÜRETİLMİŞ DOSYA — ELLE DÜZENLEME.

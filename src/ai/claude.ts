@@ -7,7 +7,7 @@
  */
 import type { Settings } from '@/store/useAppStore';
 
-import { buildUserPrompt, SYSTEM_PROMPT, type InterpretationKind } from './prompts';
+import { buildUserPrompt, SYSTEM_PROMPT, type InterpretationKind, type InterpretationTheme } from './prompts';
 import { getApiKey } from './secure';
 
 export const AI_MODEL = 'claude-opus-5';
@@ -17,6 +17,8 @@ export interface InterpretRequest {
   /** serializeChart / serializeTransits / serializeSynastry çıktısı */
   data: string;
   effort: Settings['aiEffort'];
+  /** Yorumun odağı; verilmezse genel */
+  theme?: InterpretationTheme;
 }
 
 export interface InterpretResult {
@@ -65,7 +67,7 @@ export async function interpretDirect(apiKey: string, req: InterpretRequest): Pr
       thinking: { type: 'adaptive' },
       output_config: { effort: req.effort },
       system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
-      messages: [{ role: 'user', content: buildUserPrompt(req.kind, req.data) }],
+      messages: [{ role: 'user', content: buildUserPrompt(req.kind, req.data, req.theme) }],
     });
 
     if (response.stop_reason === 'refusal') {
@@ -107,7 +109,7 @@ export async function interpretViaProxy(url: string, req: InterpretRequest, toke
     res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(token ? { 'X-App-Token': token } : {}) },
-      body: JSON.stringify({ kind: req.kind, data: req.data, effort: req.effort }),
+      body: JSON.stringify({ kind: req.kind, data: req.data, effort: req.effort, theme: req.theme }),
     });
   } catch {
     throw new AiError('Vekil sunucuya ulaşılamadı.', 'network');

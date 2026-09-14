@@ -5,7 +5,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 
 import { AiError, interpret } from '@/ai/claude';
-import { interpretationKey, serializeChart, serializeSynastry, serializeTransits, type InterpretationKind } from '@/ai/prompts';
+import {
+  THEMES,
+  interpretationKey,
+  serializeChart,
+  serializeSynastry,
+  serializeTransits,
+  type InterpretationKind,
+  type InterpretationTheme,
+} from '@/ai/prompts';
 import { computeSynastry } from '@/astro/synastry';
 import { computeTransits } from '@/astro/transits';
 import { Markdown } from '@/components/Markdown';
@@ -17,13 +25,30 @@ import { useAppStore } from '@/store/useAppStore';
 const TITLES: Record<InterpretationKind, string> = {
   natal: 'Doğum Haritası Yorumu',
   daily: 'Günün Yorumu',
+  forecast: 'Tarih Öngörüsü',
   synastry: 'İlişki Yorumu',
 };
 
+/** "2028-04-20" → o günün yerel öğlen anı (saat dilimi sürprizi olmasın) */
+function parseIsoDay(iso: string | undefined, fallback: number): Date {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso ?? '');
+  if (!m) {
+    const d = new Date(fallback);
+    d.setHours(12, 0, 0, 0);
+    return d;
+  }
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0, 0);
+}
+
+function toIsoDay(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export default function InterpretScreen() {
-  const params = useLocalSearchParams<{ kind?: string; a?: string; b?: string; offset?: string }>();
+  const params = useLocalSearchParams<{ kind?: string; a?: string; b?: string; offset?: string; date?: string; theme?: string }>();
   const router = useRouter();
-  const kind = (['natal', 'daily', 'synastry'].includes(params.kind ?? '') ? params.kind : 'natal') as InterpretationKind;
+  const kind = (['natal', 'daily', 'forecast', 'synastry'].includes(params.kind ?? '') ? params.kind : 'natal') as InterpretationKind;
+  const theme = (params.theme && params.theme in THEMES ? params.theme : 'general') as InterpretationTheme;
   const profiles = useAppStore((s) => s.profiles);
   const settings = useAppStore((s) => s.settings);
   const interpretations = useAppStore((s) => s.interpretations);
@@ -41,21 +66,20 @@ export default function InterpretScreen() {
     if (!chartA) return null;
     if (kind === 'natal') {
       const data = serializeChart(chartA);
-      return { data, key: interpretationKey('natal', [chartA.input.name ?? '', params.a ?? ''], data) };
+      return { data, key: interpretationKey('natal', [chartA.input.name ?? '', params.a ?? '', theme], data) };
     }
-    if (kind === 'daily') {
-      const day = new Date(now + offsetDays * 86400000);
-      day.setHours(12, 0, 0, 0);
+    if (kind === 'daily' || kind === 'forecast') {
+      const day = params.date ? parseIsoDay(params.date, now) : parseIsoDay(undefined, now + offsetDays * 86400000);
       const report = computeTransits(chartA, day);
-      const data = `${serializeChart(chartA, 'Natal (özet için)')}\n\n${serializeTransits(report, chartA)}`;
-      const dayKey = day.toISOString().slice(0, 10);
-      return { data, key: interpretationKey('daily', [params.a ?? '', dayKey], data) };
+      // Öngörüde modele tarihin bugünden ne kadar uzak olduğu da söylenir
+      const data = `${serializeChart(chartA, 'Natal harita')}\n\n${serializeTransits(report, chartA, kind === 'forecast' ? new Date(now) : undefined)}`;
+      return { data, key: interpretationKey(kind, [params.a ?? '', toIsoDay(day), theme], data) };
     }
     if (!chartB) return null;
     const rep = computeSynastry(chartA, chartB);
     const data = `${serializeChart(chartA, `Kişi A`)}\n\n${serializeChart(chartB, `Kişi B`)}\n\n${serializeSynastry(chartA, chartB, rep)}`;
-    return { data, key: interpretationKey('synastry', [params.a ?? '', params.b ?? ''], data) };
-  }, [chartA, chartB, kind, params.a, params.b, offsetDays, now]);
+    return { data, key: interpretationKey('synastry', [params.a ?? '', params.b ?? '', theme], data) };
+  }, [chartA, chartB, kind, params.a, params.b, params.date, offsetDays, now, theme]);
 
   const cached = payload ? interpretations[payload.key] : undefined;
   const [loading, setLoading] = useState(false);
@@ -67,14 +91,14 @@ export default function InterpretScreen() {
     setLoading(true);
     setError(null);
     try {
-      const res = await interpret(settings, { kind, data: payload.data, effort: settings.aiEffort });
+      const res = await interpret(settings, { kind, data: payload.data, effort: settings.aiEffort, theme });
       setInterpretation(payload.key, { text: res.text, createdAt: Date.now(), model: res.model });
     } catch (e) {
       setError(e instanceof AiError ? e : new AiError(String(e), 'unknown'));
     } finally {
       setLoading(false);
     }
-  }, [payload, settings, kind, setInterpretation]);
+  }, [payload, settings, kind, theme, setInterpretation]);
 
   // Yorum yoksa ve AI açıksa otomatik başlat
   useEffect(() => {
@@ -91,10 +115,17 @@ export default function InterpretScreen() {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const themeLabel = theme === 'general' ? '' : ` · ${THEMES[theme].name}`;
+  const dayLabel =
+    kind === 'forecast' && params.date
+      ? ` · ${parseIsoDay(params.date, now).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}`
+      : kind === 'daily'
+        ? ` · ${offsetDays === 0 ? 'bugün' : offsetDays === 1 ? 'yarın' : offsetDays === -1 ? 'dün' : `${offsetDays > 0 ? '+' : ''}${offsetDays} gün`}`
+        : '';
   const subtitle =
     kind === 'synastry'
-      ? `${profileA?.name ?? '?'} & ${profileB?.name ?? '?'}`
-      : `${profileA?.name ?? ''}${kind === 'daily' ? ` · ${offsetDays === 0 ? 'bugün' : offsetDays === 1 ? 'yarın' : offsetDays === -1 ? 'dün' : `${offsetDays > 0 ? '+' : ''}${offsetDays} gün`}` : ''}`;
+      ? `${profileA?.name ?? '?'} & ${profileB?.name ?? '?'}${themeLabel}`
+      : `${profileA?.name ?? ''}${dayLabel}${themeLabel}`;
 
   return (
     <>

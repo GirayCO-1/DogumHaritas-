@@ -2,11 +2,18 @@
 // Kaynak: src/ai/promptText.ts — değiştirmek için orayı düzenle, sonra: npm run sync:shared
 /**
  * Claude istemleri — saf metin, bağımlılıksız. Hem uygulama (src/ai/prompts.ts)
- * hem de sunucu vekili (server/) bu dosyayı kullanır.
+ * hem de sunucu vekilleri (server/, supabase/) bu dosyayı kullanır.
  */
 import { buildStyleSection } from './houseStyle.ts';
+import { themeFocus, type InterpretationTheme } from './themes.ts';
 
-export type InterpretationKind = 'natal' | 'daily' | 'synastry';
+/**
+ * natal    — doğum haritasının kendisi
+ * daily    — bugünün (ya da yakın bir günün) gökyüzü
+ * forecast — kullanıcının seçtiği herhangi bir tarih (geçmiş ya da gelecek)
+ * synastry — iki harita arasındaki ilişki
+ */
+export type InterpretationKind = 'natal' | 'daily' | 'forecast' | 'synastry';
 
 const BASE_SYSTEM_PROMPT = `Sen deneyimli, sıcak ve dürüst bir astrologsun. Batı tropikal astrolojisi ve modern psikolojik astroloji yaklaşımıyla Türkçe yorum yazarsın.
 
@@ -26,11 +33,23 @@ const BASE_SYSTEM_PROMPT = `Sen deneyimli, sıcak ve dürüst bir astrologsun. B
  */
 export const SYSTEM_PROMPT = BASE_SYSTEM_PROMPT + buildStyleSection();
 
-export function buildUserPrompt(kind: InterpretationKind, data: string): string {
+/** Tema odağı, genel tema dışında istemin başına eklenir */
+function themeLine(theme: InterpretationTheme | undefined): string {
+  if (!theme || theme === 'general') return '';
+  return `\nODAK: ${themeFocus(theme)}\n`;
+}
+
+export function buildUserPrompt(
+  kind: InterpretationKind,
+  data: string,
+  theme: InterpretationTheme = 'general',
+): string {
+  const focus = themeLine(theme);
+
   switch (kind) {
     case 'natal':
       return `${data}
-
+${focus}
 Bu doğum haritası için kapsamlı ama okunabilir bir yorum yaz. Bölümler:
 ## Genel Bakış (3–4 cümle: haritanın ana teması)
 ## Güneş, Ay ve Yükselen (her biri için burç + ev bağlamında 1 paragraf)
@@ -41,18 +60,35 @@ Bu doğum haritası için kapsamlı ama okunabilir bir yorum yaz. Bölümler:
 ## Ay Düğümleri ve Chiron (yaşam yönü, yara ve iyileşme teması)
 ## Güçlü Yanlar ve Gelişim Alanları (madde işaretleri)
 Toplam 900–1300 kelime.`;
+
     case 'daily':
       return `${data}
-
+${focus}
 Bu kişi için bugünün gökyüzünü yorumla. Bölümler:
 ## Günün Özeti (2–3 cümle, en önemli 1–2 transit)
 ## Öne Çıkan Transitler (en dar orb'lu 4–6 açı; her biri neyi tetikler, nasıl değerlendirilir)
 ## Ay ve Duygusal İklim (Ay evresi, Ay'ın natal evi)
 ## Bugün İçin Öneriler (3–5 madde, somut ve uygulanabilir)
 300–500 kelime. Retro gezegen varsa pratik etkisini bir cümleyle belirt.`;
+
+    case 'forecast':
+      return `${data}
+${focus}
+Bu kişi için YUKARIDA BELİRTİLEN TARİHE odaklı bir öngörü yaz.
+
+Önemli: Tarih bugünden aylar ya da yıllar sonraysa Ay gibi hızlı cisimlerin o güne özgü konumu tek bir günü anlatır, dönemi değil. Bu durumda ağırlığı yavaş gezegenlere (Jüpiter, Satürn, Uranüs, Neptün, Plüton, Ay düğümleri) ve onların natal haritaya yaptığı açılara ver; Ay'dan söz edeceksen yalnızca kısa bir not olarak geç.
+
+Bölümler:
+## O Tarihte Gökyüzü (2–3 cümle: dönemi tanımlayan 1–2 yavaş transit)
+## Belirleyici Etkiler (en dar orb'lu 4–6 transit; her biri hangi yaşam alanını, nasıl hareketlendiriyor)
+## Fırsat Penceresi (bu dönemde neyi denemek destekli)
+## Dikkat Edilecekler (zorlayıcı açılar — yapıcı bir dille, nasıl yönetilir)
+## Öneriler (3–5 madde, somut)
+500–800 kelime. Kesin olay tahmini yapma; "şu tarihte şu olacak" deme. Eğilim ve zamanlama penceresi dilini kullan.`;
+
     case 'synastry':
       return `${data}
-
+${focus}
 Bu iki kişinin ilişki uyumunu yorumla. Bölümler:
 ## İlişkinin Ana Teması (3–4 cümle)
 ## Duygusal Bağ (Ay, Venüs, Güneş temasları)
