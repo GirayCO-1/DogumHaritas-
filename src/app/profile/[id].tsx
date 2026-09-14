@@ -3,9 +3,11 @@ import { useMemo } from 'react';
 
 import { ProfileForm, type ProfileDraft } from '@/components/ProfileForm';
 import { Screen, T } from '@/components/ui';
+import { useT } from '@/i18n';
 import { useAppStore } from '@/store/useAppStore';
 
 export default function ProfileEditScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const profiles = useAppStore((s) => s.profiles);
@@ -34,12 +36,12 @@ export default function ProfileEditScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: isNew ? 'Yeni Kişi' : 'Kişiyi Düzenle' }} />
+      <Stack.Screen options={{ title: isNew ? t.people.new : t.people.edit }} />
       <Screen edges={['bottom']}>
         <T variant="small">
           Doğum saati ne kadar kesinse Yükselen burç ve ev yerleşimleri o kadar doğru olur. Saat dilimi ve yaz saati, seçilen yere ve tarihe göre otomatik uygulanır.
         </T>
-        <ProfileForm initial={existing} onSubmit={onSubmit} submitLabel={isNew ? 'Haritayı Hesapla' : 'Kaydet'} />
+        <ProfileForm initial={existing} onSubmit={onSubmit} submitLabel={isNew ? t.form.calculate : t.common.save} />
       </Screen>
     </>
   );

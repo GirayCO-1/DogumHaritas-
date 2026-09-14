@@ -2,8 +2,8 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 
-import { BODIES, PLANET_ORDER } from '@/astro/constants';
-import { SYNASTRY_CATEGORY_NAMES } from '@/astro/synastry';
+import { PLANET_ORDER } from '@/astro/constants';
+import { SYNASTRY_CATEGORIES } from '@/astro/synastry';
 import { AspectList } from '@/components/ChartTables';
 import { ChartWheel } from '@/components/ChartWheel';
 import { BodyGlyph } from '@/components/Glyph';
@@ -11,6 +11,7 @@ import { ProfileChips } from '@/components/ProfileSwitcher';
 import { Bar, Button, Card, EmptyState, Row, Screen, T } from '@/components/ui';
 import { MaxContentWidth, Spacing, useColors, type Palette } from '@/constants/theme';
 import { useNatalChart, useSynastry } from '@/hooks/useChart';
+import { useAstro, useT } from '@/i18n';
 import { useAppStore } from '@/store/useAppStore';
 
 function scoreColor(score: number, c: Palette): string {
@@ -21,6 +22,8 @@ function scoreColor(score: number, c: Palette): string {
 
 export default function SynastryScreen() {
   const Colors = useColors();
+  const t = useT();
+  const astro = useAstro();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const profiles = useAppStore((s) => s.profiles);
@@ -41,9 +44,9 @@ export default function SynastryScreen() {
       <Screen>
         <EmptyState
           icon="heart-outline"
-          title="İlişki uyumu (sinastri)"
-          text="İki haritayı karşılaştırmak için en az iki kişi gerekir. Partnerinin, arkadaşının ya da bir aile üyenin haritasını ekle."
-          action={<Button title={profiles.length ? 'İkinci Kişiyi Ekle' : 'Kişi Ekle'} icon="add" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: 'new' } })} />}
+          title={t.synastry.title}
+          text={t.synastry.emptyText}
+          action={<Button title={profiles.length ? t.synastry.addSecond : t.common.addPerson} icon="add" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: 'new' } })} />}
         />
       </Screen>
     );
@@ -53,11 +56,11 @@ export default function SynastryScreen() {
 
   return (
     <Screen>
-      <T variant="label">Sinastri · İlişki uyumu</T>
+      <T variant="label">{t.synastry.header}</T>
       <View style={{ gap: 6 }}>
-        <T variant="caption">1. kişi</T>
+        <T variant="caption">{t.synastry.personA}</T>
         <ProfileChips selectedId={a?.id} onSelect={setAId} />
-        <T variant="caption">2. kişi</T>
+        <T variant="caption">{t.synastry.personB}</T>
         <ProfileChips selectedId={b?.id} onSelect={setBId} exclude={a?.id} />
       </View>
 
@@ -72,10 +75,10 @@ export default function SynastryScreen() {
           </Card>
 
           <Card>
-            {(Object.keys(report.categories) as (keyof typeof report.categories)[]).map((k) => (
+            {SYNASTRY_CATEGORIES.map((k) => (
               <Row key={k} gap={10}>
                 <T variant="small" style={{ width: 118 }}>
-                  {SYNASTRY_CATEGORY_NAMES[k]}
+                  {astro.synastryCategories[k]}
                 </T>
                 <Bar value={report.categories[k]} color={scoreColor(report.categories[k], Colors)} />
                 <T variant="mono" style={{ width: 30, textAlign: 'right' }}>
@@ -97,16 +100,16 @@ export default function SynastryScreen() {
           </View>
 
           <Button
-            title="İlişki Yorumu Al"
+            title={t.synastry.cta}
             icon="sparkles"
             variant="secondary"
             onPress={() => router.push({ pathname: '/interpret', params: { kind: 'synastry', a: a.id, b: b.id } })}
           />
 
-          <T variant="heading">Karşılıklı Açılar</T>
+          <T variant="heading">{t.synastry.mutualAspects}</T>
           <AspectList aspects={report.aspects} labelA={a.name} labelB={b.name} />
 
-          <T variant="heading">Evlere Düşüşler</T>
+          <T variant="heading">{t.synastry.houseOverlays}</T>
           <Row gap={Spacing.two} align="flex-start">
             <Card style={{ flex: 1, gap: 4 }}>
               <T variant="caption">
@@ -116,7 +119,7 @@ export default function SynastryScreen() {
                 <Row key={id} gap={6}>
                   <BodyGlyph id={id} size={14} />
                   <T variant="small" style={{ flex: 1 }}>
-                    {BODIES[id].shortName}
+                    {astro.bodiesShort[id]}
                   </T>
                   <T variant="mono">{report.housesAinB[id]}. ev</T>
                 </Row>
@@ -130,7 +133,7 @@ export default function SynastryScreen() {
                 <Row key={id} gap={6}>
                   <BodyGlyph id={id} size={14} />
                   <T variant="small" style={{ flex: 1 }}>
-                    {BODIES[id].shortName}
+                    {astro.bodiesShort[id]}
                   </T>
                   <T variant="mono">{report.housesBinA[id]}. ev</T>
                 </Row>

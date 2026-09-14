@@ -56,23 +56,12 @@ const NATAL_TARGETS: readonly BodyId[] = [
   'mc',
 ];
 
-const PHASE_NAMES = [
-  'Yeni Ay',
-  'Hilal (Büyüyen)',
-  'İlk Dördün',
-  'Şişkin Ay (Büyüyen)',
-  'Dolunay',
-  'Şişkin Ay (Küçülen)',
-  'Son Dördün',
-  'Hilal (Küçülen)',
-];
-
 export function moonPhaseFor(sunLon: number, moonLon: number): MoonPhase {
   const angle = norm360(moonLon - sunLon);
   const illumination = (1 - Math.cos((angle * Math.PI) / 180)) / 2;
   // 8 evre, her biri 45°; Yeni Ay 337.5–22.5 arası
   const idx = Math.floor(((angle + 22.5) % 360) / 45);
-  return { angle, illumination, name: PHASE_NAMES[idx], sign: zodiacPosition(moonLon).sign };
+  return { angle, illumination, index: idx, sign: zodiacPosition(moonLon).sign };
 }
 
 /**

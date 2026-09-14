@@ -18,7 +18,8 @@
  */
 import Anthropic from 'npm:@anthropic-ai/sdk@^0.125.0';
 
-import { SYSTEM_PROMPT, buildUserPrompt, type InterpretationKind } from '../_shared/promptText.ts';
+import { LOCALE_ORDER, type Locale } from '../_shared/locales.ts';
+import { systemPrompt, buildUserPrompt, type InterpretationKind } from '../_shared/promptText.ts';
 import { THEME_ORDER, type InterpretationTheme } from '../_shared/themes.ts';
 
 const MODEL = 'claude-opus-5';
@@ -60,7 +61,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
   if (!apiKey) return json({ error: 'Sunucuda ANTHROPIC_API_KEY tanımlı değil' }, 500, headers);
 
-  let body: { kind?: string; data?: string; effort?: string; theme?: string };
+  let body: { kind?: string; data?: string; effort?: string; theme?: string; locale?: string };
   try {
     body = await req.json();
   } catch {
@@ -70,6 +71,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const kind = KINDS.find((k) => k === body.kind);
   const effort = EFFORTS.find((e) => e === body.effort) ?? 'medium';
   const theme: InterpretationTheme = THEME_ORDER.find((t) => t === body.theme) ?? 'general';
+  const locale: Locale = LOCALE_ORDER.find((l) => l === body.locale) ?? 'en';
   // Uzunluk sınırı: uç noktanın genel amaçlı bir Claude geçidine dönüşmesini engeller
   if (!kind || typeof body.data !== 'string' || body.data.length < 50 || body.data.length > 60_000) {
     return json({ error: 'Geçersiz istek' }, 400, headers);
@@ -84,7 +86,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       fallbacks: 'default',
       thinking: { type: 'adaptive' },
       output_config: { effort },
-      system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+      system: [{ type: 'text', text: systemPrompt(locale), cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: buildUserPrompt(kind, body.data, theme) }],
     });
 

@@ -4,6 +4,8 @@
  * Claude istemleri — saf metin, bağımlılıksız. Hem uygulama (src/ai/prompts.ts)
  * hem de sunucu vekilleri (server/, supabase/) bu dosyayı kullanır.
  */
+import { LOCALES, type Locale } from './locales.ts';
+
 import { buildStyleSection } from './houseStyle.ts';
 import { themeFocus, type InterpretationTheme } from './themes.ts';
 
@@ -26,12 +28,30 @@ const BASE_SYSTEM_PROMPT = `Sen deneyimli, sıcak ve dürüst bir astrologsun. B
 - Markdown kullan: ## ile bölüm başlıkları, kısa paragraflar, gerektiğinde madde işaretleri. Emojiye gerek yok.
 - Verilen haritanın dışına çıkma; veride olmayan yerleşimler uydurma.`;
 
+const BASE_WITH_STYLE = BASE_SYSTEM_PROMPT + buildStyleSection();
+
 /**
- * Tam sistem istemi: temel ilkeler + (tanımlıysa) ev üslubu.
- * Modül yüklenirken bir kez hesaplanır; her istekte aynı olduğu için
- * istem önbelleği (prompt cache) bozulmaz.
+ * Tam sistem istemi: temel ilkeler + ev üslubu + çıktı dili.
+ *
+ * Harita verisi her zaman İngilizce gelir (bkz. prompts.ts); yanıtın hangi
+ * dilde yazılacağını bu direktif belirler. Direktif İngilizce yazılmıştır
+ * ki hangi dil seçilirse seçilsin tek anlama gelsin.
+ *
+ * Dil başına bir istem üretilir ve değişmez — istem önbelleği (prompt cache)
+ * her dil için ayrı ayrı çalışmaya devam eder.
  */
-export const SYSTEM_PROMPT = BASE_SYSTEM_PROMPT + buildStyleSection();
+const SYSTEM_PROMPTS: Record<Locale, string> = Object.fromEntries(
+  (Object.keys(LOCALES) as Locale[]).map((code) => [
+    code,
+    `${BASE_WITH_STYLE}
+
+OUTPUT LANGUAGE: Write your entire answer in ${LOCALES[code].promptName}. Use the astrological vocabulary that is natural in that language. The chart data you are given is labelled in English; translate those terms into the output language. Do not mix languages and do not add a translation of your own text.`,
+  ]),
+) as Record<Locale, string>;
+
+export function systemPrompt(locale: Locale): string {
+  return SYSTEM_PROMPTS[locale] ?? SYSTEM_PROMPTS.en;
+}
 
 /** Tema odağı, genel tema dışında istemin başına eklenir */
 function themeLine(theme: InterpretationTheme | undefined): string {

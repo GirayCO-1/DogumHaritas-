@@ -228,7 +228,8 @@ export interface MoonPhase {
   angle: number;
   /** Aydınlanma oranı 0–1 */
   illumination: number;
-  name: string;
+  /** 0–7: Yeni Ay'dan başlayarak sekiz evre. Adı dile göre çözülür. */
+  index: number;
   /** Ay'ın bulunduğu burç */
   sign: number;
 }

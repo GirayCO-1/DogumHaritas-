@@ -1,60 +1,67 @@
 /**
- * Claude'a gönderilecek istemler. Harita verisi kompakt metin olarak
- * serileştirilir; sistem istemi sabittir (prompt cache için).
+ * Claude'a gönderilecek istemler.
+ *
+ * Harita verisi kullanıcının dilinden bağımsız olarak İNGİLİZCE
+ * serileştirilir: model astroloji terminolojisini bu dilde en sağlam bilir,
+ * tek bir veri biçimi istem önbelleğini bozmaz ve hata ayıklamayı
+ * kolaylaştırır. Yanıtın hangi dilde yazılacağı sistem isteminde ayrıca
+ * belirtilir (bkz. promptText.ts).
  */
-import { ASPECTS, BODIES, ELEMENT_NAMES, HOUSE_NAMES, HOUSE_SYSTEM_NAMES, MODALITY_NAMES, SIGNS } from '@/astro/constants';
-import { DIGNITY_NAMES } from '@/astro/dignities';
+import { astroText } from '@/astro/i18n';
 import { formatDegMin } from '@/astro/format';
-import { SYNASTRY_CATEGORY_NAMES } from '@/astro/synastry';
+import { SYNASTRY_CATEGORIES } from '@/astro/synastry';
 import { formatLocal } from '@/astro/time';
-import type { Aspect, BodyPosition, NatalChart, SynastryReport, TransitReport } from '@/astro/types';
+import type { Aspect, BodyId, BodyPosition, NatalChart, SynastryReport, TransitReport } from '@/astro/types';
 
 import type { InterpretationKind } from './promptText';
 
-export { buildUserPrompt, SYSTEM_PROMPT, type InterpretationKind } from './promptText';
+/** Harita verisi her zaman İngilizce terimlerle yazılır */
+const T = astroText('en');
+
+export { buildUserPrompt, systemPrompt, type InterpretationKind } from './promptText';
 export { THEMES, THEME_ORDER, type InterpretationTheme, type ThemeInfo } from './themes';
 
 function body(p: BodyPosition): string {
-  const retro = p.retrograde ? ' (retro)' : '';
-  return `${BODIES[p.id].name}: ${formatDegMin(p.longitude)} ${SIGNS[p.sign].name}, ${p.house}. ev${retro}`;
+  const retro = p.retrograde ? ' (retrograde)' : '';
+  return `${T.bodies[p.id]}: ${formatDegMin(p.longitude)} ${T.signs[p.sign]}, house ${p.house}${retro}`;
 }
 
 function aspect(a: Aspect): string {
-  return `${BODIES[a.a].name} ${ASPECTS[a.type].name.toLowerCase()} ${BODIES[a.b].name} (orb ${Math.abs(a.orb).toFixed(1)}°, ${a.applying ? 'yaklaşan' : 'uzaklaşan'})`;
+  return `${T.bodies[a.a]} ${T.aspects[a.type].toLowerCase()} ${T.bodies[a.b]} (orb ${Math.abs(a.orb).toFixed(1)}°, ${a.applying ? 'applying' : 'separating'})`;
 }
 
 /** Natal haritayı kompakt metne çevirir */
-export function serializeChart(chart: NatalChart, label = 'Doğum Haritası'): string {
+export function serializeChart(chart: NatalChart, label = 'Natal Chart'): string {
   const { input, meta, houses } = chart;
   const lines: string[] = [];
   lines.push(`# ${label}${input.name ? ` — ${input.name}` : ''}`);
   lines.push(
-    `Doğum: ${formatLocal(meta.utc, meta.timeZone, !input.timeUnknown)}${input.timeUnknown ? ' (saat bilinmiyor, öğlen varsayıldı — ASC ve evler güvenilmez)' : ''}, ${input.placeName ?? `${input.location.lat.toFixed(2)}, ${input.location.lng.toFixed(2)}`}`,
+    `Born: ${formatLocal(meta.utc, meta.timeZone, !input.timeUnknown)}${input.timeUnknown ? ' (birth time unknown, noon assumed — ASC and houses unreliable)' : ''}, ${input.placeName ?? `${input.location.lat.toFixed(2)}, ${input.location.lng.toFixed(2)}`}`,
   );
-  lines.push(`Ev sistemi: ${HOUSE_SYSTEM_NAMES[houses.system]}${houses.fallbackFrom ? ` (${HOUSE_SYSTEM_NAMES[houses.fallbackFrom]} kutup enlemi nedeniyle çözülemedi)` : ''}. ${meta.isDayChart ? 'Gündüz' : 'Gece'} doğumu.`);
+  lines.push(`House system: ${T.houseSystems[houses.system]}${houses.fallbackFrom ? ` (${T.houseSystems[houses.fallbackFrom]} could not be resolved at this polar latitude)` : ''}. ${meta.isDayChart ? 'Day' : 'Night'} chart.`);
   lines.push('');
-  lines.push('## Gezegenler');
+  lines.push('## Planets');
   for (const p of chart.planets) lines.push(`- ${body(p)}`);
   lines.push('');
-  lines.push('## Noktalar');
-  for (const p of chart.points) lines.push(`- ${BODIES[p.id].name}: ${formatDegMin(p.longitude)} ${SIGNS[p.sign].name}`);
+  lines.push('## Points');
+  for (const p of chart.points) lines.push(`- ${T.bodies[p.id]}: ${formatDegMin(p.longitude)} ${T.signs[p.sign]}`);
   lines.push('');
-  lines.push('## Ev başlangıçları');
+  lines.push('## House cusps');
   houses.cusps.forEach((c, i) => {
     const sign = Math.floor(c / 30) % 12;
-    lines.push(`- ${i + 1}. ev (${HOUSE_NAMES[i]}): ${formatDegMin(c)} ${SIGNS[sign].name}`);
+    lines.push(`- House ${i + 1} (${T.houses[i]}): ${formatDegMin(c)} ${T.signs[sign]}`);
   });
   lines.push('');
-  lines.push('## Açılar (orb küçükten büyüğe)');
+  lines.push('## Aspects (tightest orb first)');
   for (const a of chart.aspects) lines.push(`- ${aspect(a)}`);
   lines.push('');
   const e = chart.elements;
   const m = chart.modalities;
   lines.push(
-    `## Dengeler\nElementler: ${(Object.keys(e) as (keyof typeof e)[]).map((k) => `${ELEMENT_NAMES[k]} ${e[k].toFixed(1)}`).join(', ')}\nNitelikler: ${(Object.keys(m) as (keyof typeof m)[]).map((k) => `${MODALITY_NAMES[k]} ${m[k].toFixed(1)}`).join(', ')}`,
+    `## Balances\nElements: ${(Object.keys(e) as (keyof typeof e)[]).map((k) => `${T.elements[k]} ${e[k].toFixed(1)}`).join(', ')}\nModalities: ${(Object.keys(m) as (keyof typeof m)[]).map((k) => `${T.modalities[k]} ${m[k].toFixed(1)}`).join(', ')}`,
   );
   if (chart.dignities.length) {
-    lines.push(`Onurlar: ${chart.dignities.map((d) => `${BODIES[d.body].name} — ${DIGNITY_NAMES[d.kind]}`).join('; ')}`);
+    lines.push(`Dignities: ${chart.dignities.map((d) => `${T.bodies[d.body]} — ${T.dignities[d.kind]}`).join('; ')}`);
   }
   return lines.join('\n');
 }
@@ -66,29 +73,30 @@ export function serializeChart(chart: NatalChart, label = 'Doğum Haritası'): s
  */
 export function serializeTransits(report: TransitReport, natal: NatalChart, from?: Date): string {
   const lines: string[] = [];
-  lines.push(`# Transitler — ${formatLocal(report.date, natal.meta.timeZone)}`);
+  lines.push(`# Transits — ${formatLocal(report.date, natal.meta.timeZone)}`);
   if (from) {
     const days = Math.round((report.date.getTime() - from.getTime()) / 86400000);
     const abs = Math.abs(days);
+    const dir = days > 0 ? 'from now' : 'ago';
     const when =
       abs < 1
-        ? 'bugün'
+        ? 'today'
         : abs < 45
-          ? `bugünden ${abs} gün ${days > 0 ? 'sonra' : 'önce'}`
+          ? `${abs} days ${dir}`
           : abs < 400
-            ? `bugünden yaklaşık ${Math.round(abs / 30)} ay ${days > 0 ? 'sonra' : 'önce'}`
-            : `bugünden yaklaşık ${(abs / 365.25).toFixed(1)} yıl ${days > 0 ? 'sonra' : 'önce'}`;
-    lines.push(`Bu tarih ${when}.${abs >= 45 ? ' Ay ve diğer hızlı cisimler yalnızca o güne aittir; dönemi yavaş gezegenler tanımlar.' : ''}`);
+            ? `about ${Math.round(abs / 30)} months ${dir}`
+            : `about ${(abs / 365.25).toFixed(1)} years ${dir}`;
+    lines.push(`This date is ${when}.${abs >= 45 ? ' The Moon and other fast bodies describe only that single day; the period itself is defined by the slow planets.' : ''}`);
   }
-  lines.push(`Ay evresi: ${report.moonPhase.name} (${Math.round(report.moonPhase.illumination * 100)}% aydınlık), Ay ${SIGNS[report.moonPhase.sign].name} burcunda`);
-  if (report.retrogrades.length) lines.push(`Retro gezegenler: ${report.retrogrades.map((id) => BODIES[id].name).join(', ')}`);
+  lines.push(`Moon phase: ${T.moonPhases[report.moonPhase.index]} (${Math.round(report.moonPhase.illumination * 100)}% illuminated), Moon in ${T.signs[report.moonPhase.sign]}`);
+  if (report.retrogrades.length) lines.push(`Retrograde planets: ${report.retrogrades.map((id) => T.bodies[id]).join(', ')}`);
   lines.push('');
-  lines.push('## Transit konumları (natal evlere göre)');
+  lines.push('## Transiting positions (by natal house)');
   for (const p of report.transitPositions) lines.push(`- ${body(p)}`);
   lines.push('');
-  lines.push('## Transit → natal açılar (orb küçükten büyüğe)');
+  lines.push('## Transit → natal aspects (tightest orb first)');
   for (const a of report.aspects.slice(0, 25)) {
-    lines.push(`- Transit ${BODIES[a.transitBody].name} ${ASPECTS[a.type].name.toLowerCase()} natal ${BODIES[a.natalBody].name} (orb ${Math.abs(a.orb).toFixed(1)}°, ${a.applying ? 'yaklaşan' : 'uzaklaşan'}; transit ${a.transitHouse}. evde)`);
+    lines.push(`- Transiting ${T.bodies[a.transitBody]} ${T.aspects[a.type].toLowerCase()} natal ${T.bodies[a.natalBody]} (orb ${Math.abs(a.orb).toFixed(1)}°, ${a.applying ? 'applying' : 'separating'}; transiting body in house ${a.transitHouse})`);
   }
   return lines.join('\n');
 }
@@ -97,23 +105,19 @@ export function serializeSynastry(a: NatalChart, b: NatalChart, report: Synastry
   const nameA = a.input.name || 'A';
   const nameB = b.input.name || 'B';
   const lines: string[] = [];
-  lines.push(`# Sinastri — ${nameA} & ${nameB}`);
-  lines.push(`Genel uyum skoru: ${report.score}/100`);
-  lines.push(
-    (Object.keys(report.categories) as (keyof typeof report.categories)[])
-      .map((k) => `${SYNASTRY_CATEGORY_NAMES[k]}: ${report.categories[k]}`)
-      .join(', '),
-  );
+  lines.push(`# Synastry — ${nameA} & ${nameB}`);
+  lines.push(`Overall compatibility score: ${report.score}/100`);
+  lines.push(SYNASTRY_CATEGORIES.map((k) => `${T.synastryCategories[k]}: ${report.categories[k]}`).join(', '));
   lines.push('');
-  lines.push(`## ${nameA}'nın gezegenleri ${nameB}'nin evlerinde`);
-  for (const [id, h] of Object.entries(report.housesAinB)) lines.push(`- ${BODIES[id as keyof typeof BODIES].name}: ${h}. ev`);
+  lines.push(`## ${nameA}'s planets in ${nameB}'s houses`);
+  for (const [id, h] of Object.entries(report.housesAinB)) lines.push(`- ${T.bodies[id as BodyId]}: house ${h}`);
   lines.push('');
-  lines.push(`## ${nameB}'nin gezegenleri ${nameA}'nın evlerinde`);
-  for (const [id, h] of Object.entries(report.housesBinA)) lines.push(`- ${BODIES[id as keyof typeof BODIES].name}: ${h}. ev`);
+  lines.push(`## ${nameB}'s planets in ${nameA}'s houses`);
+  for (const [id, h] of Object.entries(report.housesBinA)) lines.push(`- ${T.bodies[id as BodyId]}: house ${h}`);
   lines.push('');
-  lines.push('## Karşılıklı açılar (orb küçükten büyüğe)');
+  lines.push('## Mutual aspects (tightest orb first)');
   for (const x of report.aspects.slice(0, 30)) {
-    lines.push(`- ${nameA} ${BODIES[x.personA].name} ${ASPECTS[x.type].name.toLowerCase()} ${nameB} ${BODIES[x.personB].name} (orb ${Math.abs(x.orb).toFixed(1)}°)`);
+    lines.push(`- ${nameA} ${T.bodies[x.personA]} ${T.aspects[x.type].toLowerCase()} ${nameB} ${T.bodies[x.personB]} (orb ${Math.abs(x.orb).toFixed(1)}°)`);
   }
   return lines.join('\n');
 }

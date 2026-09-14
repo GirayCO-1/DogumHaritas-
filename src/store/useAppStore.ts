@@ -4,6 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { BirthInput, HouseSystem, NodeType } from '@/astro/types';
 import { registerAppearanceHook, type Appearance } from '@/constants/theme';
+import { registerLanguageHook, type LanguageSetting } from '@/i18n';
 
 /** Kayıtlı kişi profili (cihazda saklanır) */
 export interface Profile {
@@ -32,6 +33,8 @@ export type AiEffort = 'low' | 'medium' | 'high';
 export interface Settings {
   /** Görünüm: açık (varsayılan), koyu ya da cihaz ayarını izle */
   appearance: Appearance;
+  /** Dil: seçili dil ya da cihazın dili */
+  language: LanguageSetting;
   houseSystem: HouseSystem;
   nodeType: NodeType;
   /** Küçük açıları (30°, 45°, 72°, 135°, 144°) göster */
@@ -81,6 +84,7 @@ export const BUILD_PROXY_TOKEN = (process.env.EXPO_PUBLIC_AI_PROXY_TOKEN ?? '').
 
 export const DEFAULT_SETTINGS: Settings = {
   appearance: 'light',
+  language: 'system',
   houseSystem: 'placidus',
   nodeType: 'true',
   showMinorAspects: false,
@@ -206,3 +210,4 @@ export function useActiveProfile(): Profile | undefined {
  * kullanılıyor ki theme.ts ile store arasında döngüsel bağımlılık olmasın.
  */
 registerAppearanceHook(() => useAppStore((s) => s.settings.appearance));
+registerLanguageHook(() => useAppStore((s) => s.settings.language));

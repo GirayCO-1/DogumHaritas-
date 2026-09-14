@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
 
+import { useT, type Messages } from '@/i18n';
 import { Radius, Spacing, forEachScheme, useColors, useScheme } from '@/constants/theme';
 import type { City } from '@/data/cities';
 import type { Profile } from '@/store/useAppStore';
@@ -50,26 +51,26 @@ function daysInMonth(y: number, m: number): number {
   return new Date(Date.UTC(y, m, 0)).getUTCDate();
 }
 
-export function validate(f: FormState): { errors: string[]; draft?: ProfileDraft } {
+export function validate(t: Messages, f: FormState): { errors: string[]; draft?: ProfileDraft } {
   const errors: string[] = [];
   const name = f.name.trim();
-  if (!name) errors.push('İsim gerekli.');
+  if (!name) errors.push(t.form.nameRequired);
   const day = parseInt(f.day, 10);
   const month = parseInt(f.month, 10);
   const year = parseInt(f.year, 10);
   const now = new Date();
-  if (!(year >= 1800 && year <= now.getFullYear() + 1)) errors.push('Yıl 1800 ile bugün arasında olmalı.');
-  if (!(month >= 1 && month <= 12)) errors.push('Ay 1–12 arasında olmalı.');
-  else if (!(day >= 1 && day <= daysInMonth(year || 2000, month))) errors.push('Gün geçersiz.');
+  if (!(year >= 1800 && year <= now.getFullYear() + 1)) errors.push(t.form.invalidYearRange);
+  if (!(month >= 1 && month <= 12)) errors.push(t.form.invalidMonth);
+  else if (!(day >= 1 && day <= daysInMonth(year || 2000, month))) errors.push(t.form.invalidDay);
   let hour = 12;
   let minute = 0;
   if (!f.timeUnknown) {
     hour = parseInt(f.hour, 10);
     minute = f.minute === '' ? 0 : parseInt(f.minute, 10);
-    if (!(hour >= 0 && hour <= 23)) errors.push('Saat 0–23 arasında olmalı.');
-    if (!(minute >= 0 && minute <= 59)) errors.push('Dakika 0–59 arasında olmalı.');
+    if (!(hour >= 0 && hour <= 23)) errors.push(t.form.invalidHour);
+    if (!(minute >= 0 && minute <= 59)) errors.push(t.form.invalidMinute);
   }
-  if (!f.city) errors.push('Doğum yeri seçin.');
+  if (!f.city) errors.push(t.form.cityRequired);
   if (errors.length || !f.city) return { errors };
   return {
     errors,
@@ -94,7 +95,7 @@ export function validate(f: FormState): { errors: string[]; draft?: ProfileDraft
 export function ProfileForm({
   initial,
   onSubmit,
-  submitLabel = 'Haritayı Hesapla',
+  submitLabel,
   saving,
 }: {
   initial?: Profile | null;
@@ -102,6 +103,7 @@ export function ProfileForm({
   submitLabel?: string;
   saving?: boolean;
 }) {
+  const t = useT();
   const styles = stylesSets[useScheme()];
   const Colors = useColors();
   const [f, setF] = useState<FormState>(() => fromProfile(initial));
@@ -109,7 +111,7 @@ export function ProfileForm({
   const [touched, setTouched] = useState(false);
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setF((s) => ({ ...s, [k]: v }));
 
-  const result = useMemo(() => validate(f), [f]);
+  const result = useMemo(() => validate(t, f), [t, f]);
   const showErrors = touched && result.errors.length > 0;
 
   const onCity = (c: City) => {
@@ -120,11 +122,11 @@ export function ProfileForm({
   return (
     <View style={{ gap: Spacing.three }}>
       <Card>
-        <T variant="label">İsim</T>
+        <T variant="label">{t.form.name}</T>
         <TextInput
           value={f.name}
           onChangeText={(v) => set('name', v)}
-          placeholder="Örn. Ayşe"
+          placeholder={t.form.namePlaceholder}
           placeholderTextColor={Colors.muted}
           style={styles.input}
           autoCapitalize="words"
@@ -133,19 +135,19 @@ export function ProfileForm({
       </Card>
 
       <Card>
-        <T variant="label">Doğum tarihi</T>
+        <T variant="label">{t.form.birthDate}</T>
         <Row gap={Spacing.two}>
-          <Field label="Gün" value={f.day} onChange={(v) => set('day', v)} maxLength={2} placeholder="15" />
-          <Field label="Ay" value={f.month} onChange={(v) => set('month', v)} maxLength={2} placeholder="6" />
-          <Field label="Yıl" value={f.year} onChange={(v) => set('year', v)} maxLength={4} placeholder="1990" flex={1.4} />
+          <Field label={t.form.day} value={f.day} onChange={(v) => set('day', v)} maxLength={2} placeholder="15" />
+          <Field label={t.form.month} value={f.month} onChange={(v) => set('month', v)} maxLength={2} placeholder="6" />
+          <Field label={t.form.year} value={f.year} onChange={(v) => set('year', v)} maxLength={4} placeholder="1990" flex={1.4} />
         </Row>
       </Card>
 
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
-          <T variant="label">Doğum saati</T>
+          <T variant="label">{t.form.birthTime}</T>
           <Row gap={8}>
-            <T variant="small">Saati bilmiyorum</T>
+            <T variant="small">{t.form.unknownTime}</T>
             <Switch
               value={f.timeUnknown}
               onValueChange={(v) => set('timeUnknown', v)}
@@ -160,22 +162,22 @@ export function ProfileForm({
           </T>
         ) : (
           <Row gap={Spacing.two}>
-            <Field label="Saat" value={f.hour} onChange={(v) => set('hour', v)} maxLength={2} placeholder="14" />
+            <Field label={t.form.hour} value={f.hour} onChange={(v) => set('hour', v)} maxLength={2} placeholder="14" />
             <T variant="heading" style={{ marginTop: 14 }}>
               :
             </T>
-            <Field label="Dakika" value={f.minute} onChange={(v) => set('minute', v)} maxLength={2} placeholder="30" />
+            <Field label={t.form.minute} value={f.minute} onChange={(v) => set('minute', v)} maxLength={2} placeholder="30" />
             <View style={{ flex: 1.2 }} />
           </Row>
         )}
       </Card>
 
       <Card>
-        <T variant="label">Doğum yeri</T>
+        <T variant="label">{t.form.birthPlace}</T>
         <Pressable onPress={() => setPickerOpen(true)} style={({ pressed }) => [styles.cityBtn, pressed && { opacity: 0.8 }]}>
           <Ionicons name="location" size={18} color={f.city ? Colors.primary : Colors.muted} />
           <View style={{ flex: 1 }}>
-            <T color={f.city ? Colors.text : Colors.muted}>{f.city ? f.city.label : 'Şehir / ilçe seçin'}</T>
+            <T color={f.city ? Colors.text : Colors.muted}>{f.city ? f.city.label : '{t.form.pickCity}'}</T>
             {f.city && (
               <T variant="caption">
                 {f.city.lat.toFixed(3)}°, {f.city.lng.toFixed(3)}° · {f.city.timeZone}
@@ -189,8 +191,8 @@ export function ProfileForm({
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
           <View style={{ flex: 1 }}>
-            <T variant="subheading">Bu benim haritam</T>
-            <T variant="small">Transitler ve günlük yorumlar bu kişi için gösterilir.</T>
+            <T variant="subheading">{t.form.isSelf}</T>
+            <T variant="small">{t.form.selfNote}</T>
           </View>
           <Switch value={f.isSelf} onValueChange={(v) => set('isSelf', v)} trackColor={{ true: Colors.primary, false: Colors.cardStrong }} thumbColor="#fff" />
         </Row>
@@ -210,7 +212,7 @@ export function ProfileForm({
       )}
 
       <Button
-        title={submitLabel}
+        title={submitLabel ?? t.form.calculate}
         icon="sparkles"
         loading={saving}
         onPress={() => {

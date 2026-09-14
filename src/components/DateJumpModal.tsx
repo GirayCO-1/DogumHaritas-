@@ -4,6 +4,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MaxContentWidth, Radius, Spacing, forEachScheme, useColors, useScheme } from '@/constants/theme';
+import { useT } from '@/i18n';
 
 import { Button, Chip, Row, T } from './ui';
 
@@ -18,13 +19,8 @@ function addMonths(base: Date, months: number): Date {
   return d;
 }
 
-const PRESETS: { label: string; months: number }[] = [
-  { label: '+1 ay', months: 1 },
-  { label: '+3 ay', months: 3 },
-  { label: '+6 ay', months: 6 },
-  { label: '+1 yıl', months: 12 },
-  { label: '+3 yıl', months: 36 },
-];
+/** Ay cinsinden hızlı atlamalar; etiketleri dile göre kurulur */
+const PRESET_MONTHS = [1, 3, 6, 12, 36] as const;
 
 /**
  * Herhangi bir tarihe atlamak için gün/ay/yıl girişi.
@@ -63,6 +59,7 @@ function DateJumpForm({
   onClose: () => void;
   onSelect: (date: Date) => void;
 }) {
+  const t = useT();
   const styles = stylesSets[useScheme()];
   const Colors = useColors();
   const [day, setDay] = useState(() => String(initial.getDate()));
@@ -73,11 +70,11 @@ function DateJumpForm({
     const d = parseInt(day, 10);
     const m = parseInt(month, 10);
     const y = parseInt(year, 10);
-    if (!(y >= 1900 && y <= 2099)) return { error: 'Yıl 1900–2099 arasında olmalı.' };
-    if (!(m >= 1 && m <= 12)) return { error: 'Ay 1–12 arasında olmalı.' };
-    if (!(d >= 1 && d <= daysInMonth(y, m))) return { error: 'Gün geçersiz.' };
+    if (!(y >= 1900 && y <= 2099)) return { error: t.date.invalidYear };
+    if (!(m >= 1 && m <= 12)) return { error: t.form.invalidMonth };
+    if (!(d >= 1 && d <= daysInMonth(y, m))) return { error: t.form.invalidDay };
     return { date: new Date(y, m - 1, d, 12, 0, 0, 0) };
-  }, [day, month, year]);
+  }, [day, month, year, t]);
 
   const apply = (date: Date) => {
     onSelect(date);
@@ -87,18 +84,18 @@ function DateJumpForm({
   return (
     <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
       <Row style={{ justifyContent: 'space-between' }}>
-        <T variant="heading">Tarih Seç</T>
-        <Pressable onPress={onClose} hitSlop={12} accessibilityLabel="Kapat">
+        <T variant="heading">{t.date.title}</T>
+        <Pressable onPress={onClose} hitSlop={12} accessibilityLabel={t.common.close}>
           <Ionicons name="close" size={24} color={Colors.textSecondary} />
         </Pressable>
       </Row>
 
-      <T variant="small">Geçmiş ya da gelecek herhangi bir tarihi girebilirsin. Gökyüzü o güne göre hesaplanır.</T>
+      <T variant="small">{t.date.hint}</T>
 
       <Row gap={Spacing.two} align="flex-end">
-        <Field label="Gün" value={day} onChange={setDay} maxLength={2} placeholder="20" />
-        <Field label="Ay" value={month} onChange={setMonth} maxLength={2} placeholder="4" />
-        <Field label="Yıl" value={year} onChange={setYear} maxLength={4} placeholder="2028" flex={1.5} />
+        <Field label={t.form.day} value={day} onChange={setDay} maxLength={2} placeholder="20" />
+        <Field label={t.form.month} value={month} onChange={setMonth} maxLength={2} placeholder="4" />
+        <Field label={t.form.year} value={year} onChange={setYear} maxLength={4} placeholder="2028" flex={1.5} />
       </Row>
 
       {parsed.error ? (
@@ -115,17 +112,21 @@ function DateJumpForm({
       )}
 
       <T variant="label" style={{ marginTop: Spacing.two }}>
-        Hızlı atla
+        {t.date.quickJump}
       </T>
       <Row gap={Spacing.two} style={{ flexWrap: 'wrap' }}>
-        <Chip label="Bugün" icon="today-outline" onPress={() => apply(new Date())} />
-        {PRESETS.map((p) => (
-          <Chip key={p.label} label={p.label} onPress={() => apply(addMonths(new Date(), p.months))} />
+        <Chip label={t.common.today} icon="today-outline" onPress={() => apply(new Date())} />
+        {PRESET_MONTHS.map((months) => (
+          <Chip
+            key={months}
+            label={months % 12 === 0 ? t.date.plusYears(months / 12) : t.date.plusMonths(months)}
+            onPress={() => apply(addMonths(new Date(), months))}
+          />
         ))}
       </Row>
 
       <Button
-        title="Bu Tarihi Kullan"
+        title={t.date.use}
         icon="checkmark"
         disabled={!parsed.date}
         onPress={() => parsed.date && apply(parsed.date)}

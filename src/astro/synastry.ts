@@ -131,10 +131,11 @@ export function computeSynastry(a: NatalChart, b: NatalChart): SynastryReport {
   return { aspects, score, categories, housesAinB, housesBinA };
 }
 
-export const SYNASTRY_CATEGORY_NAMES: Record<keyof SynastryReport['categories'], string> = {
-  love: 'Aşk & Romantizm',
-  communication: 'İletişim',
-  harmony: 'Duygusal Uyum',
-  passion: 'Tutku & Çekim',
-  stability: 'Kalıcılık & Güven',
-};
+/** Kategori adları dile göre çözülür: `astroText(locale).synastryCategories` */
+export const SYNASTRY_CATEGORIES: readonly (keyof SynastryReport['categories'])[] = [
+  'love',
+  'communication',
+  'harmony',
+  'passion',
+  'stability',
+];

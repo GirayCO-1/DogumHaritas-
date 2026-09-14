@@ -20,14 +20,12 @@ import { Markdown } from '@/components/Markdown';
 import { Button, Card, Row, Screen, T } from '@/components/ui';
 import { useColors } from '@/constants/theme';
 import { useNatalChart } from '@/hooks/useChart';
+import { useLocale, useT, type Messages } from '@/i18n';
 import { useAppStore } from '@/store/useAppStore';
 
-const TITLES: Record<InterpretationKind, string> = {
-  natal: 'Doğum Haritası Yorumu',
-  daily: 'Günün Yorumu',
-  forecast: 'Tarih Öngörüsü',
-  synastry: 'İlişki Yorumu',
-};
+function titleFor(t: Messages, kind: InterpretationKind): string {
+  return kind === 'natal' ? t.interpret.natal : kind === 'daily' ? t.interpret.daily : kind === 'forecast' ? t.interpret.forecast : t.interpret.synastry;
+}
 
 /** "2028-04-20" → o günün yerel öğlen anı (saat dilimi sürprizi olmasın) */
 function parseIsoDay(iso: string | undefined, fallback: number): Date {
@@ -46,6 +44,8 @@ function toIsoDay(d: Date): string {
 
 export default function InterpretScreen() {
   const Colors = useColors();
+  const t = useT();
+  const locale = useLocale();
   const params = useLocalSearchParams<{ kind?: string; a?: string; b?: string; offset?: string; date?: string; theme?: string }>();
   const router = useRouter();
   const kind = (['natal', 'daily', 'forecast', 'synastry'].includes(params.kind ?? '') ? params.kind : 'natal') as InterpretationKind;
@@ -67,20 +67,20 @@ export default function InterpretScreen() {
     if (!chartA) return null;
     if (kind === 'natal') {
       const data = serializeChart(chartA);
-      return { data, key: interpretationKey('natal', [chartA.input.name ?? '', params.a ?? '', theme], data) };
+      return { data, key: interpretationKey('natal', [chartA.input.name ?? '', params.a ?? '', theme, locale], data) };
     }
     if (kind === 'daily' || kind === 'forecast') {
       const day = params.date ? parseIsoDay(params.date, now) : parseIsoDay(undefined, now + offsetDays * 86400000);
       const report = computeTransits(chartA, day);
       // Öngörüde modele tarihin bugünden ne kadar uzak olduğu da söylenir
       const data = `${serializeChart(chartA, 'Natal harita')}\n\n${serializeTransits(report, chartA, kind === 'forecast' ? new Date(now) : undefined)}`;
-      return { data, key: interpretationKey(kind, [params.a ?? '', toIsoDay(day), theme], data) };
+      return { data, key: interpretationKey(kind, [params.a ?? '', toIsoDay(day), theme, locale], data) };
     }
     if (!chartB) return null;
     const rep = computeSynastry(chartA, chartB);
     const data = `${serializeChart(chartA, `Kişi A`)}\n\n${serializeChart(chartB, `Kişi B`)}\n\n${serializeSynastry(chartA, chartB, rep)}`;
-    return { data, key: interpretationKey('synastry', [params.a ?? '', params.b ?? '', theme], data) };
-  }, [chartA, chartB, kind, params.a, params.b, params.date, offsetDays, now, theme]);
+    return { data, key: interpretationKey('synastry', [params.a ?? '', params.b ?? '', theme, locale], data) };
+  }, [chartA, chartB, kind, params.a, params.b, params.date, offsetDays, now, theme, locale]);
 
   const cached = payload ? interpretations[payload.key] : undefined;
   const [loading, setLoading] = useState(false);
@@ -92,14 +92,14 @@ export default function InterpretScreen() {
     setLoading(true);
     setError(null);
     try {
-      const res = await interpret(settings, { kind, data: payload.data, effort: settings.aiEffort, theme });
+      const res = await interpret(settings, { kind, data: payload.data, effort: settings.aiEffort, theme, locale });
       setInterpretation(payload.key, { text: res.text, createdAt: Date.now(), model: res.model });
     } catch (e) {
       setError(e instanceof AiError ? e : new AiError(String(e), 'unknown'));
     } finally {
       setLoading(false);
     }
-  }, [payload, settings, kind, theme, setInterpretation]);
+  }, [payload, settings, kind, theme, locale, setInterpretation]);
 
   // Yorum yoksa ve AI açıksa otomatik başlat
   useEffect(() => {
@@ -116,12 +116,12 @@ export default function InterpretScreen() {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const themeLabel = theme === 'general' ? '' : ` · ${THEMES[theme].name}`;
+  const themeLabel = theme === 'general' ? '' : ` · ${t.theme[theme].name}`;
   const dayLabel =
     kind === 'forecast' && params.date
       ? ` · ${parseIsoDay(params.date, now).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}`
       : kind === 'daily'
-        ? ` · ${offsetDays === 0 ? 'bugün' : offsetDays === 1 ? 'yarın' : offsetDays === -1 ? 'dün' : `${offsetDays > 0 ? '+' : ''}${offsetDays} gün`}`
+        ? ` · ${offsetDays === 0 ? t.common.today : offsetDays === 1 ? t.common.tomorrow : offsetDays === -1 ? t.common.yesterday : t.sky.dayOffset(offsetDays > 0 ? '+' : '−', Math.abs(offsetDays))}`
         : '';
   const subtitle =
     kind === 'synastry'
@@ -130,13 +130,13 @@ export default function InterpretScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: TITLES[kind] }} />
+      <Stack.Screen options={{ title: titleFor(t, kind) }} />
       <Screen edges={['bottom']}>
         <T variant="small">{subtitle}</T>
 
         {!payload && (
           <Card>
-            <T color={Colors.danger}>Harita verisi bulunamadı.</T>
+            <T color={Colors.danger}>{t.interpret.noData}</T>
           </Card>
         )}
 
@@ -144,12 +144,12 @@ export default function InterpretScreen() {
           <Card tone="primary">
             <Row gap={8}>
               <Ionicons name="sparkles" size={18} color={Colors.primary} />
-              <T variant="subheading">Yapay zekâ yorumu kapalı</T>
+              <T variant="subheading">{t.interpret.aiOffTitle}</T>
             </Row>
             <T variant="small">
-              Kişiye özel yorum almak için Ayarlar’dan Claude’u etkinleştir: kendi Anthropic API anahtarını gir ya da bir vekil sunucu adresi tanımla.
+              {t.interpret.aiOffText}
             </T>
-            <Button title="Ayarları Aç" icon="settings-outline" variant="secondary" onPress={() => router.push('/settings')} />
+            <Button title={t.interpret.openSettings} icon="settings-outline" variant="secondary" onPress={() => router.push('/settings')} />
           </Card>
         )}
 
@@ -157,10 +157,10 @@ export default function InterpretScreen() {
           <Card style={{ alignItems: 'center', paddingVertical: 32 }}>
             <ActivityIndicator color={Colors.primary} size="large" />
             <T variant="subheading" style={{ marginTop: 12 }}>
-              Yorum hazırlanıyor…
+              {t.interpret.loading}
             </T>
             <T variant="small" style={{ textAlign: 'center' }}>
-              Harita inceleniyor. Bu işlem derinliğe göre 20–90 saniye sürebilir.
+              {t.interpret.loadingNote}
             </T>
           </Card>
         )}
@@ -170,15 +170,15 @@ export default function InterpretScreen() {
             <Row gap={8}>
               <Ionicons name="alert-circle" size={18} color={Colors.danger} />
               <T variant="subheading" color={Colors.danger}>
-                Yorum alınamadı
+                {t.interpret.failed}
               </T>
             </Row>
             <T variant="small">{error.message}</T>
             <Row gap={8}>
               {(error.code === 'no-key' || error.code === 'auth' || error.code === 'proxy' || error.code === 'disabled') && (
-                <Button title="Ayarlar" small variant="secondary" icon="settings-outline" onPress={() => router.push('/settings')} />
+                <Button title={t.common.settings} small variant="secondary" icon="settings-outline" onPress={() => router.push('/settings')} />
               )}
-              <Button title="Tekrar Dene" small icon="refresh" onPress={run} />
+              <Button title={t.common.retry} small icon="refresh" onPress={run} />
             </Row>
           </Card>
         )}
@@ -193,7 +193,7 @@ export default function InterpretScreen() {
                 {new Date(cached.createdAt).toLocaleString('tr-TR')} · {cached.model}
               </T>
               <Row gap={8}>
-                <Button title={copied ? 'Kopyalandı' : 'Kopyala'} small variant="ghost" icon="copy-outline" onPress={copy} />
+                <Button title={copied ? t.common.copied : t.common.copy} small variant="ghost" icon="copy-outline" onPress={copy} />
                 <Button title="Yenile" small variant="ghost" icon="refresh" onPress={run} disabled={settings.aiMode === 'off'} />
               </Row>
             </Row>

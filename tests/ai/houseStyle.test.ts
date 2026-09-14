@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildStyleSection, type StyleExample } from '../../src/ai/houseStyle';
-import { SYSTEM_PROMPT, buildUserPrompt } from '../../src/ai/promptText';
+import { systemPrompt, buildUserPrompt } from '../../src/ai/promptText';
 
 const EXAMPLE: StyleExample[] = [
   { label: 'Natal — Genel Bakış', text: 'Haritanın merkezinde bir gerilim var: hızlı karar veren bir zihin, temkinli bir yürek.' },
@@ -31,8 +31,9 @@ describe('ev üslubu', () => {
   });
 
   it('sistem istemi temel ilkeleri her hâlükârda taşır', () => {
-    expect(SYSTEM_PROMPT).toContain('Kaderci olma');
-    expect(SYSTEM_PROMPT).toContain('veride olmayan yerleşimler uydurma');
+    const prompt = systemPrompt('tr');
+    expect(prompt).toContain('Kaderci olma');
+    expect(prompt).toContain('veride olmayan yerleşimler uydurma');
   });
 
   it('kullanıcı istemi harita verisini ve bölüm planını içerir', () => {

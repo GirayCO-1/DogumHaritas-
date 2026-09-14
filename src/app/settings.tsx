@@ -5,24 +5,31 @@ import { Linking, StyleSheet, Switch, TextInput, View } from 'react-native';
 
 import { AI_MODEL } from '@/ai/claude';
 import { getApiKey, maskKey, setApiKey } from '@/ai/secure';
-import { HOUSE_SYSTEM_NAMES } from '@/astro/constants';
 import type { HouseSystem, NodeType } from '@/astro/types';
 import { Button, Card, Chip, Divider, Row, Screen, T } from '@/components/ui';
 import { Radius, forEachScheme, useColors, useScheme, type Appearance } from '@/constants/theme';
 import { cityCount } from '@/data/cities';
+import { LOCALES, LOCALE_ORDER, useAstro, useRtl, useT, type LanguageSetting } from '@/i18n';
 import { BUILD_PROXY_URL, useAppStore, type AiEffort, type AiMode } from '@/store/useAppStore';
 
 const HOUSE_SYSTEMS: HouseSystem[] = ['placidus', 'koch', 'whole', 'equal', 'porphyry', 'campanus', 'regiomontanus'];
 
-const APPEARANCES: [Appearance, string, string][] = [
-  ['light', 'Açık', 'sunny-outline'],
-  ['dark', 'Gece', 'moon-outline'],
-  ['system', 'Cihaz', 'phone-portrait-outline'],
-];
+const APPEARANCE_ICONS: Record<Appearance, string> = {
+  light: 'sunny-outline',
+  dark: 'moon-outline',
+  system: 'phone-portrait-outline',
+};
+const APPEARANCE_ORDER: readonly Appearance[] = ['light', 'dark', 'system'];
+
+/** Ayarda dil listesi: önce "cihaz dili", sonra desteklenen diller */
+const LANGUAGE_ORDER: readonly LanguageSetting[] = ['system', ...LOCALE_ORDER];
 
 export default function SettingsScreen() {
   const styles = stylesSets[useScheme()];
   const Colors = useColors();
+  const t = useT();
+  const astro = useAstro();
+  const rtl = useRtl();
   const settings = useAppStore((s) => s.settings);
   const update = useAppStore((s) => s.updateSettings);
   const clearInterpretations = useAppStore((s) => s.clearInterpretations);
@@ -46,39 +53,58 @@ export default function SettingsScreen() {
 
   return (
     <Screen edges={['bottom']}>
-      <T variant="heading">Görünüm</T>
+      <T variant="heading">{t.settings.appearance}</T>
       <Card>
-        <T variant="label">Tema</T>
+        <T variant="label">{t.settings.theme}</T>
         <Row gap={8} style={{ flexWrap: 'wrap' }}>
-          {APPEARANCES.map(([k, label, icon]) => (
+          {APPEARANCE_ORDER.map((k) => (
             <Chip
               key={k}
-              label={label}
-              icon={icon as never}
+              label={k === 'light' ? t.settings.light : k === 'dark' ? t.settings.dark : t.settings.system}
+              icon={APPEARANCE_ICONS[k] as never}
               active={settings.appearance === k}
               onPress={() => update({ appearance: k })}
             />
           ))}
         </Row>
-        <T variant="small">“Cihaz” seçilirse telefonun açık/koyu tercihi izlenir.</T>
-      </Card>
-
-      <T variant="heading">Hesaplama</T>
-      <Card>
-        <T variant="label">Ev sistemi</T>
+        <T variant="small">{t.settings.themeNote}</T>
+        <Divider />
+        <T variant="label">{t.settings.language}</T>
         <Row gap={8} style={{ flexWrap: 'wrap' }}>
-          {HOUSE_SYSTEMS.map((h) => (
-            <Chip key={h} label={HOUSE_SYSTEM_NAMES[h]} active={settings.houseSystem === h} onPress={() => update({ houseSystem: h })} />
+          {LANGUAGE_ORDER.map((k) => (
+            <Chip
+              key={k}
+              label={k === 'system' ? t.settings.languageSystem : LOCALES[k].name}
+              active={settings.language === k}
+              onPress={() => update({ language: k })}
+            />
           ))}
         </Row>
-        <T variant="small">Placidus, Türkiye’de ve dünyada en yaygın kullanılan sistemdir. Kutup enlemlerinde otomatik olarak Porphyry’ye geçilir.</T>
+        <T variant="small">{t.settings.languageNote}</T>
+        {/* Sağdan sola yerleşim yalnızca açılışta kurulur */}
+        {rtl && (
+          <T variant="small" color={Colors.warning}>
+            {t.settings.rtlRestart}
+          </T>
+        )}
+      </Card>
+
+      <T variant="heading">{t.settings.calculation}</T>
+      <Card>
+        <T variant="label">{t.settings.houseSystem}</T>
+        <Row gap={8} style={{ flexWrap: 'wrap' }}>
+          {HOUSE_SYSTEMS.map((h) => (
+            <Chip key={h} label={astro.houseSystems[h]} active={settings.houseSystem === h} onPress={() => update({ houseSystem: h })} />
+          ))}
+        </Row>
+        <T variant="small">{t.settings.houseSystemNote}</T>
         <Divider />
-        <T variant="label">Ay düğümü</T>
+        <T variant="label">{t.settings.lunarNode}</T>
         <Row gap={8}>
           {(
             [
-              ['true', 'Gerçek (True)'],
-              ['mean', 'Ortalama (Mean)'],
+              ['true', t.settings.nodeTrue],
+              ['mean', t.settings.nodeMean],
             ] as [NodeType, string][]
           ).map(([k, label]) => (
             <Chip key={k} label={label} active={settings.nodeType === k} onPress={() => update({ nodeType: k })} />
@@ -87,24 +113,22 @@ export default function SettingsScreen() {
         <Divider />
         <Row style={{ justifyContent: 'space-between' }}>
           <View style={{ flex: 1 }}>
-            <T variant="subheading">Küçük açılar</T>
-            <T variant="small">30°, 45°, 72°, 135°, 144° açılarını da hesapla</T>
+            <T variant="subheading">{t.settings.minorAspects}</T>
+            <T variant="small">{t.settings.minorAspectsNote}</T>
           </View>
           <Switch value={settings.showMinorAspects} onValueChange={(v) => update({ showMinorAspects: v })} trackColor={{ true: Colors.primary, false: Colors.cardStrong }} thumbColor="#fff" />
         </Row>
       </Card>
 
-      <T variant="heading">Yapay Zekâ Yorumu</T>
+      <T variant="heading">{t.settings.ai}</T>
       <Card>
-        <T variant="small">
-          Yorumlar Anthropic’in Claude modeli ({AI_MODEL}) ile üretilir. Harita verisi (gezegen konumları, evler, açılar) ve profildeki isim gönderilir; başka hiçbir veri paylaşılmaz.
-        </T>
+        <T variant="small">{t.settings.aiNote(AI_MODEL)}</T>
         <Row gap={8} style={{ flexWrap: 'wrap' }}>
           {(
             [
-              ['off', 'Kapalı'],
-              ['direct', 'Kendi API anahtarım'],
-              ['proxy', 'Sunucu vekili'],
+              ['off', t.settings.aiOff],
+              ['direct', t.settings.aiOwnKey],
+              ['proxy', t.settings.aiProxy],
             ] as [AiMode, string][]
           ).map(([k, label]) => (
             <Chip key={k} label={label} active={settings.aiMode === k} onPress={() => update({ aiMode: k })} />
@@ -113,7 +137,7 @@ export default function SettingsScreen() {
 
         {settings.aiMode === 'direct' && (
           <View style={{ gap: 8 }}>
-            <T variant="label">Anthropic API anahtarı</T>
+            <T variant="label">{t.settings.apiKey}</T>
             <T variant="small">
               Anahtar cihazda güvenli alanda (Keychain / Keystore) saklanır, yalnızca api.anthropic.com’a gönderilir.{' '}
               <T variant="small" color={Colors.primary} onPress={() => Linking.openURL('https://console.anthropic.com/settings/keys')}>
@@ -129,7 +153,7 @@ export default function SettingsScreen() {
             <TextInput
               value={keyInput}
               onChangeText={setKeyInput}
-              placeholder={storedKey ? 'Yeni anahtar girerek değiştir' : 'sk-ant-…'}
+              placeholder={storedKey ? '{t.settings.replaceKey}' : 'sk-ant-…'}
               placeholderTextColor={Colors.muted}
               style={styles.input}
               autoCapitalize="none"
@@ -137,10 +161,10 @@ export default function SettingsScreen() {
               secureTextEntry
             />
             <Row gap={8}>
-              <Button title={keySaved ? 'Kaydedildi ✓' : 'Anahtarı Kaydet'} small onPress={saveKey} disabled={!keyInput.trim()} />
+              <Button title={keySaved ? t.settings.savedTick : t.settings.saveKey} small onPress={saveKey} disabled={!keyInput.trim()} />
               {storedKey && (
                 <Button
-                  title="Anahtarı Sil"
+                  title={t.settings.deleteKey}
                   small
                   variant="danger"
                   onPress={async () => {
@@ -157,7 +181,7 @@ export default function SettingsScreen() {
           <View style={{ gap: 8 }}>
             <Row gap={6}>
               <Ionicons name="shield-checkmark" size={16} color={Colors.success} />
-              <T variant="subheading">Uygulama sunucusu kullanılıyor</T>
+              <T variant="subheading">{t.settings.usingAppServer}</T>
             </Row>
             <T variant="small">
               Yorumlar uygulamanın kendi sunucusu üzerinden üretilir; senin bir API anahtarı girmene gerek yok.
@@ -168,8 +192,8 @@ export default function SettingsScreen() {
 
         {settings.aiMode === 'proxy' && !BUILD_PROXY_URL && (
           <View style={{ gap: 8 }}>
-            <T variant="label">Vekil sunucu adresi</T>
-            <T variant="small">Anahtarı sunucuda tutmak için server/ klasöründeki örnek vekili yayınla ve adresini gir (Play Store dağıtımı için önerilen yol).</T>
+            <T variant="label">{t.settings.proxyUrl}</T>
+            <T variant="small">{t.settings.proxyNote}</T>
             <TextInput
               value={settings.aiProxyUrl}
               onChangeText={(v) => update({ aiProxyUrl: v })}
@@ -180,11 +204,11 @@ export default function SettingsScreen() {
               autoCorrect={false}
               keyboardType="url"
             />
-            <T variant="label">Uygulama anahtarı (isteğe bağlı)</T>
+            <T variant="label">{t.settings.appToken}</T>
             <TextInput
               value={settings.aiProxyToken}
               onChangeText={(v) => update({ aiProxyToken: v })}
-              placeholder="Vekilde APP_TOKEN tanımlıysa buraya gir"
+              placeholder="{t.settings.appTokenNote}"
               placeholderTextColor={Colors.muted}
               style={styles.input}
               autoCapitalize="none"
@@ -197,19 +221,19 @@ export default function SettingsScreen() {
         {settings.aiMode !== 'off' && (
           <>
             <Divider />
-            <T variant="label">Derinlik</T>
+            <T variant="label">{t.settings.depth}</T>
             <Row gap={8}>
               {(
                 [
-                  ['low', 'Hızlı'],
-                  ['medium', 'Dengeli'],
-                  ['high', 'Derin'],
+                  ['low', t.settings.fast],
+                  ['medium', t.settings.balanced],
+                  ['high', t.settings.deep],
                 ] as [AiEffort, string][]
               ).map(([k, label]) => (
                 <Chip key={k} label={label} active={settings.aiEffort === k} onPress={() => update({ aiEffort: k })} />
               ))}
             </Row>
-            <T variant="small">Daha derin yorumlar daha uzun sürer ve daha fazla token harcar.</T>
+            <T variant="small">{t.settings.depthNote}</T>
           </>
         )}
 
@@ -218,17 +242,17 @@ export default function SettingsScreen() {
             <Divider />
             <Row style={{ justifyContent: 'space-between' }}>
               <T variant="small">{cacheCount} kayıtlı yorum</T>
-              <Button title="Önbelleği Temizle" small variant="ghost" onPress={clearInterpretations} />
+              <Button title={t.settings.clearCache} small variant="ghost" onPress={clearInterpretations} />
             </Row>
           </>
         )}
       </Card>
 
-      <T variant="heading">Hakkında</T>
+      <T variant="heading">{t.settings.about}</T>
       <Card>
         <T variant="small">Doğum Haritası v{Constants.expoConfig?.version ?? '1.0.0'}</T>
         <T variant="small">Gezegen konumları: astronomy-engine (VSOP87 tabanlı, ±1′). Chiron: Moshier efemerisi. Şehir veritabanı: GeoNames ({cityCount().toLocaleString('tr-TR')} yerleşim). Saat dilimleri: IANA tz.</T>
-        <T variant="small">Tüm hesaplar cihazda yapılır; kişiler yalnızca bu cihazda saklanır.</T>
+        <T variant="small">{t.settings.aboutNote}</T>
       </Card>
     </Screen>
   );

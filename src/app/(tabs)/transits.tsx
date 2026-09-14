@@ -3,8 +3,8 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, useWindowDimensions, View } from 'react-native';
 
-import { THEMES, THEME_ORDER, type InterpretationTheme } from '@/ai/prompts';
-import { BODIES, SIGNS } from '@/astro/constants';
+import { THEME_ORDER, type InterpretationTheme } from '@/ai/prompts';
+import { BODIES } from '@/astro/constants';
 import { formatLocal } from '@/astro/time';
 import { DateJumpModal } from '@/components/DateJumpModal';
 import { AspectList } from '@/components/ChartTables';
@@ -14,6 +14,7 @@ import { ProfileChips } from '@/components/ProfileSwitcher';
 import { Badge, Button, Card, Chip, EmptyState, Row, Screen, T } from '@/components/ui';
 import { MaxContentWidth, Spacing, useColors } from '@/constants/theme';
 import { useNatalChart, useTransits } from '@/hooks/useChart';
+import { useAstro, useFormat, useT, type Messages } from '@/i18n';
 import { useAppStore } from '@/store/useAppStore';
 
 const DAY = 86400000;
@@ -23,16 +24,19 @@ function toIsoDay(d: Date): string {
 }
 
 /** Seçili tarih bugüne göre nerede duruyor */
-function dayLabelFor(offsetDays: number, date: Date): string {
-  if (offsetDays === 0) return 'Bugün';
-  if (offsetDays === 1) return 'Yarın';
-  if (offsetDays === -1) return 'Dün';
-  if (Math.abs(offsetDays) <= 30) return `${offsetDays > 0 ? '+' : ''}${offsetDays} gün`;
+function dayLabelFor(t: Messages, fmt: ReturnType<typeof useFormat>, offsetDays: number, date: Date): string {
+  if (offsetDays === 0) return t.common.today;
+  if (offsetDays === 1) return t.common.tomorrow;
+  if (offsetDays === -1) return t.common.yesterday;
+  if (Math.abs(offsetDays) <= 30) return t.sky.dayOffset(offsetDays > 0 ? '+' : '−', Math.abs(offsetDays));
   return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 export default function TransitsScreen() {
   const Colors = useColors();
+  const t = useT();
+  const astro = useAstro();
+  const fmt = useFormat();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const profiles = useAppStore((s) => s.profiles);
@@ -65,16 +69,16 @@ export default function TransitsScreen() {
       <Screen>
         <EmptyState
           icon="sunny-outline"
-          title="Günlük transitler"
-          text="Bugünün gökyüzünün doğum haritanla yaptığı açıları görmek için önce bir kişi ekle."
-          action={<Button title="Kişi Ekle" icon="add" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: 'new' } })} />}
+          title={t.sky.emptyTitle}
+          text={t.sky.emptyText}
+          action={<Button title={t.common.addPerson} icon="add" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: 'new' } })} />}
         />
       </Screen>
     );
   }
 
   const wheelSize = Math.min(width - Spacing.three * 2, MaxContentWidth - Spacing.three * 2, 460);
-  const dayLabel = dayLabelFor(offsetDays, date);
+  const dayLabel = dayLabelFor(t, fmt, offsetDays, date);
   const isToday = offsetDays === 0;
   // Bugünden uzak tarihlerde günlük yorum değil, dönem öngörüsü istenir
   const kind = Math.abs(offsetDays) > 3 ? 'forecast' : 'daily';
@@ -90,28 +94,28 @@ export default function TransitsScreen() {
 
   return (
     <Screen>
-      <T variant="label">Gökyüzü</T>
+      <T variant="label">{t.sky.title}</T>
       <ProfileChips selectedId={profile.id} onSelect={setProfileId} />
 
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
-          <Pressable onPress={() => setOffsetDays((d) => d - 1)} hitSlop={10} style={{ padding: 6 }} accessibilityLabel="Önceki gün">
+          <Pressable onPress={() => setOffsetDays((d) => d - 1)} hitSlop={10} style={{ padding: 6 }} accessibilityLabel={t.sky.prevDay}>
             <Ionicons name="chevron-back" size={22} color={Colors.textSecondary} />
           </Pressable>
-          <Pressable onPress={() => setPickerOpen(true)} style={{ alignItems: 'center', flex: 1 }} accessibilityLabel="Tarih seç">
+          <Pressable onPress={() => setPickerOpen(true)} style={{ alignItems: 'center', flex: 1 }} accessibilityLabel={t.sky.pickDate}>
             <Row gap={6}>
               <T variant="heading">{dayLabel}</T>
               <Ionicons name="calendar-outline" size={16} color={Colors.primary} />
             </Row>
             <T variant="small">{chart ? formatLocal(date, chart.meta.timeZone) : ''}</T>
           </Pressable>
-          <Pressable onPress={() => setOffsetDays((d) => d + 1)} hitSlop={10} style={{ padding: 6 }} accessibilityLabel="Sonraki gün">
+          <Pressable onPress={() => setOffsetDays((d) => d + 1)} hitSlop={10} style={{ padding: 6 }} accessibilityLabel={t.sky.nextDay}>
             <Ionicons name="chevron-forward" size={22} color={Colors.textSecondary} />
           </Pressable>
         </Row>
         {!isToday && (
           <Row style={{ justifyContent: 'center' }}>
-            <Chip label="Bugüne dön" icon="today-outline" onPress={() => setOffsetDays(0)} />
+            <Chip label={t.sky.backToToday} icon="today-outline" onPress={() => setOffsetDays(0)} />
           </Row>
         )}
       </Card>
@@ -120,30 +124,30 @@ export default function TransitsScreen() {
         <>
           <Row gap={Spacing.two}>
             <Card style={{ flex: 1 }}>
-              <T variant="label">Ay evresi</T>
+              <T variant="label">{t.sky.moonPhase}</T>
               <Row gap={8}>
                 <BodyGlyph id="moon" size={22} />
                 <View style={{ flex: 1 }}>
-                  <T variant="subheading">{report.moonPhase.name}</T>
+                  <T variant="subheading">{astro.moonPhases[report.moonPhase.index]}</T>
                   <Row gap={4}>
                     <SignGlyph sign={report.moonPhase.sign} size={14} />
                     <T variant="small">
-                      {SIGNS[report.moonPhase.sign].name} · %{Math.round(report.moonPhase.illumination * 100)}
+                      {astro.signs[report.moonPhase.sign]} · {t.common.percent(Math.round(report.moonPhase.illumination * 100))}
                     </T>
                   </Row>
                 </View>
               </Row>
             </Card>
             <Card style={{ flex: 1 }}>
-              <T variant="label">Retro</T>
+              <T variant="label">{t.sky.retro}</T>
               {report.retrogrades.length ? (
                 <Row gap={6} style={{ flexWrap: 'wrap' }}>
                   {report.retrogrades.map((id) => (
-                    <Badge key={id} label={`${BODIES[id].symbol} ${BODIES[id].shortName}`} color={Colors.danger} />
+                    <Badge key={id} label={`${BODIES[id].symbol} ${astro.bodiesShort[id]}`} color={Colors.danger} />
                   ))}
                 </Row>
               ) : (
-                <T variant="small">Retro gezegen yok</T>
+                <T variant="small">{t.sky.noRetro}</T>
               )}
             </Card>
           </Row>
@@ -154,22 +158,22 @@ export default function TransitsScreen() {
               size={wheelSize}
               showAspects
               outer={report.transitPositions}
-              outerLabel="Dış halka: transit gezegenler"
+              outerLabel={t.sky.outerRing}
               crossAspects={report.aspects}
               visibleBodies={['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'chiron', 'northNode']}
             />
           </View>
 
           <Card>
-            <T variant="label">Yorum odağı</T>
+            <T variant="label">{t.sky.focus}</T>
             <Row gap={Spacing.two} style={{ flexWrap: 'wrap' }}>
-              {THEME_ORDER.map((t) => (
-                <Chip key={t} label={THEMES[t].name} active={theme === t} onPress={() => setTheme(t)} />
+              {THEME_ORDER.map((k) => (
+                <Chip key={k} label={t.theme[k].name} active={theme === k} onPress={() => setTheme(k)} />
               ))}
             </Row>
-            <T variant="small">{THEMES[theme].tagline}</T>
+            <T variant="small">{t.theme[theme].tagline}</T>
             <Button
-              title={isToday ? 'Günün Yorumunu Al' : 'Bu Tarih İçin Öngörü Al'}
+              title={isToday ? t.sky.interpretDaily : t.sky.interpretForecast}
               icon="sparkles"
               onPress={() =>
                 router.push({
@@ -180,18 +184,18 @@ export default function TransitsScreen() {
             />
           </Card>
 
-          <T variant="heading">Gökyüzü → Natal Açılar</T>
-          <AspectList aspects={report.aspects} labelA="Transit" labelB="Natal" emptyText="Bu gün için belirgin bir transit açısı yok." />
+          <T variant="heading">{t.sky.aspectsTitle}</T>
+          <AspectList aspects={report.aspects} labelA={t.sky.transit} labelB={t.sky.natal} emptyText={t.sky.noAspects} />
 
-          <T variant="heading">O Tarihteki Gezegenler</T>
+          <T variant="heading">{t.sky.planetsAt}</T>
           <Card style={{ gap: 6 }}>
             {report.transitPositions.map((p) => (
               <Row key={p.id} gap={10}>
                 <BodyGlyph id={p.id} size={18} />
-                <T style={{ flex: 1 }}>{BODIES[p.id].name}</T>
+                <T style={{ flex: 1 }}>{astro.bodies[p.id]}</T>
                 <SignGlyph sign={p.sign} size={16} />
                 <T variant="mono" color={Colors.text}>
-                  {p.deg}°{String(p.min).padStart(2, '0')}′ {SIGNS[p.sign].name}
+                  {p.deg}°{String(p.min).padStart(2, '0')}′ {astro.signs[p.sign]}
                 </T>
                 <T variant="caption" style={{ width: 44, textAlign: 'right' }}>
                   {p.house}. ev{p.retrograde ? ' ℞' : ''}

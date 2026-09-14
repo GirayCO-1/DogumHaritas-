@@ -2,10 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Fragment } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { ASPECTS, BODIES, ELEMENT_NAMES, HOUSE_NAMES, MODALITY_NAMES, SIGNS } from '@/astro/constants';
-import { DIGNITY_NAMES } from '@/astro/dignities';
+import { ASPECTS, BODIES } from '@/astro/constants';
 import { formatDegMin, formatSpeed } from '@/astro/format';
 import type { Aspect, BodyId, BodyPosition, Dignity, ElementBalance, ModalityBalance, NatalChart } from '@/astro/types';
+import { useAstro, useT } from '@/i18n';
 import { Radius, Spacing, forEachScheme, shadow, useAspectColors, useColors, useElementColors, useScheme, type AspectPalette } from '@/constants/theme';
 
 import { BodyGlyph, SignGlyph, useSignColor } from './Glyph';
@@ -26,6 +26,8 @@ export function PlanetTable({
   onSelect?: (id: BodyId | null) => void;
   showPoints?: boolean;
 }) {
+  const t = useT();
+  const astro = useAstro();
   const Colors = useColors();
   const signColor = useSignColor();
   const tbl = tblSets[useScheme()];
@@ -47,12 +49,12 @@ export function PlanetTable({
               </View>
               <View style={{ flex: 1 }}>
                 <Row gap={6}>
-                  <T variant="subheading">{BODIES[p.id].name}</T>
-                  {p.retrograde && <Badge label="℞ Retro" color={Colors.danger} />}
-                  {dg && <Badge label={DIGNITY_NAMES[dg].split(' ')[0]} color={dg === 'domicile' || dg === 'exaltation' ? Colors.success : Colors.warning} />}
+                  <T variant="subheading">{astro.bodies[p.id]}</T>
+                  {p.retrograde && <Badge label={t.chart.retroBadge} color={Colors.danger} />}
+                  {dg && <Badge label={astro.dignities[dg].split(' ')[0]} color={dg === 'domicile' || dg === 'exaltation' ? Colors.success : Colors.warning} />}
                 </Row>
                 <T variant="small">
-                  {p.house}. ev · {HOUSE_NAMES[p.house - 1]}
+                  {t.chart.houseN(p.house)} · {astro.houses[p.house - 1]}
                 </T>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
@@ -63,7 +65,7 @@ export function PlanetTable({
                   <SignGlyph sign={p.sign} size={16} />
                 </Row>
                 <T variant="caption" color={signColor(p.sign)}>
-                  {SIGNS[p.sign].name}
+                  {astro.signs[p.sign]}
                 </T>
               </View>
             </Pressable>
@@ -79,6 +81,8 @@ export function PlanetTable({
 /* ------------------------------------------------------------------ */
 
 export function BodyDetail({ chart, id }: { chart: NatalChart; id: BodyId }) {
+  const t = useT();
+  const astro = useAstro();
   const Colors = useColors();
   const aspectColor = useAspectColor();
   const p = [...chart.planets, ...chart.points].find((x) => x.id === id);
@@ -91,18 +95,18 @@ export function BodyDetail({ chart, id }: { chart: NatalChart; id: BodyId }) {
         <BodyGlyph id={id} size={26} />
         <View style={{ flex: 1 }}>
           <T variant="heading">
-            {BODIES[id].name} · {formatDegMin(p.longitude)} {SIGNS[p.sign].name}
+            {astro.bodies[id]} · {formatDegMin(p.longitude)} {astro.signs[p.sign]}
           </T>
           <T variant="small">
-            {p.house}. ev · {HOUSE_NAMES[p.house - 1]}
-            {BODIES[id].physical ? ` · ${formatSpeed(p.speed)}${p.retrograde ? ' (retro)' : ''}` : ''}
+            {t.chart.houseN(p.house)} · {astro.houses[p.house - 1]}
+            {BODIES[id].physical ? ` · ${formatSpeed(p.speed)}${p.retrograde ? ` (${t.chart.retro})` : ''}` : ''}
           </T>
         </View>
       </Row>
-      {dg && <T variant="small" color={Colors.primary}>{DIGNITY_NAMES[dg.kind]}</T>}
+      {dg && <T variant="small" color={Colors.primary}>{astro.dignities[dg.kind]}</T>}
       {asp.length > 0 && (
         <View style={{ gap: 6 }}>
-          <T variant="label">Açılar</T>
+          <T variant="label">{t.chart.aspects}</T>
           {asp.map((a, i) => {
             const other = a.a === id ? a.b : a.a;
             const info = ASPECTS[a.type];
@@ -113,7 +117,7 @@ export function BodyDetail({ chart, id }: { chart: NatalChart; id: BodyId }) {
                 </T>
                 <BodyGlyph id={other} size={16} />
                 <T style={{ flex: 1 }}>
-                  {info.name} {BODIES[other].name}
+                  {astro.aspects[a.type]} {astro.bodies[other]}
                 </T>
                 <T variant="mono">
                   {Math.abs(a.orb).toFixed(1)}° {a.applying ? '↗' : '↘'}
@@ -132,6 +136,8 @@ export function BodyDetail({ chart, id }: { chart: NatalChart; id: BodyId }) {
 /* ------------------------------------------------------------------ */
 
 export function HouseTable({ chart }: { chart: NatalChart }) {
+  const t = useT();
+  const astro = useAstro();
   const Colors = useColors();
   const signColor = useSignColor();
   const tbl = tblSets[useScheme()];
@@ -150,9 +156,9 @@ export function HouseTable({ chart }: { chart: NatalChart }) {
                 </T>
               </View>
               <View style={{ flex: 1 }}>
-                <T variant="subheading">{HOUSE_NAMES[i]}</T>
+                <T variant="subheading">{astro.houses[i]}</T>
                 <Row gap={4} style={{ flexWrap: 'wrap' }}>
-                  {inHouse.length ? inHouse.map((p) => <BodyGlyph key={p.id} id={p.id} size={14} />) : <T variant="caption">boş</T>}
+                  {inHouse.length ? inHouse.map((p) => <BodyGlyph key={p.id} id={p.id} size={14} />) : <T variant="caption">{t.chart.empty}</T>}
                 </Row>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
@@ -163,7 +169,7 @@ export function HouseTable({ chart }: { chart: NatalChart }) {
                   <SignGlyph sign={sign} size={16} />
                 </Row>
                 <T variant="caption" color={signColor(sign)}>
-                  {SIGNS[sign].name}
+                  {astro.signs[sign]}
                 </T>
               </View>
             </View>
@@ -194,20 +200,22 @@ export function AspectList({
   aspects,
   labelA,
   labelB,
-  emptyText = 'Açı bulunamadı.',
+  emptyText,
 }: {
   aspects: Aspect[];
   labelA?: string;
   labelB?: string;
   emptyText?: string;
 }) {
+  const t = useT();
+  const astro = useAstro();
   const Colors = useColors();
   const aspectColor = useAspectColor();
   const tbl = tblSets[useScheme()];
   if (!aspects.length)
     return (
       <Card>
-        <T variant="small">{emptyText}</T>
+        <T variant="small">{emptyText ?? t.chart.noAspects}</T>
       </Card>
     );
   return (
@@ -225,12 +233,12 @@ export function AspectList({
               <View style={{ flex: 1 }}>
                 <Row gap={6}>
                   <BodyGlyph id={a.a} size={16} />
-                  <T variant="subheading">{BODIES[a.a].name}</T>
+                  <T variant="subheading">{astro.bodies[a.a]}</T>
                   <T variant="small" color={color}>
-                    {info.name.toLowerCase()}
+                    {astro.aspects[a.type].toLowerCase()}
                   </T>
                   <BodyGlyph id={a.b} size={16} />
-                  <T variant="subheading">{BODIES[a.b].name}</T>
+                  <T variant="subheading">{astro.bodies[a.b]}</T>
                 </Row>
                 {labelA && labelB ? (
                   <T variant="caption">
@@ -242,7 +250,7 @@ export function AspectList({
                 <T variant="mono" color={Colors.text}>
                   {Math.abs(a.orb).toFixed(1)}°
                 </T>
-                <T variant="caption">{a.applying ? 'yaklaşan' : 'uzaklaşan'}</T>
+                <T variant="caption">{a.applying ? t.chart.applying : t.chart.separating}</T>
               </View>
             </View>
           </Fragment>
@@ -305,34 +313,36 @@ const gridSets = forEachScheme((c) => StyleSheet.create({
 /* ------------------------------------------------------------------ */
 
 export function BalanceBars({ elements, modalities }: { elements: ElementBalance; modalities: ModalityBalance }) {
+  const t = useT();
+  const astro = useAstro();
   const Colors = useColors();
   const ElementColors = useElementColors();
   const eTotal = Object.values(elements).reduce((a, b) => a + b, 0) || 1;
   const mTotal = Object.values(modalities).reduce((a, b) => a + b, 0) || 1;
   return (
     <Card>
-      <T variant="label">Elementler</T>
+      <T variant="label">{t.chart.elements}</T>
       {(Object.keys(elements) as (keyof ElementBalance)[]).map((k) => (
         <Row key={k} gap={10}>
           <T variant="small" style={{ width: 62 }} color={ElementColors[k]}>
-            {ELEMENT_NAMES[k]}
+            {astro.elements[k]}
           </T>
           <Bar value={(elements[k] / eTotal) * 100} color={ElementColors[k]} />
           <T variant="mono" style={{ width: 38, textAlign: 'right' }}>
-            {Math.round((elements[k] / eTotal) * 100)}%
+            {t.common.percent(Math.round((elements[k] / eTotal) * 100))}
           </T>
         </Row>
       ))}
       <Divider />
-      <T variant="label">Nitelikler</T>
+      <T variant="label">{t.chart.modalities}</T>
       {(Object.keys(modalities) as (keyof ModalityBalance)[]).map((k) => (
         <Row key={k} gap={10}>
           <T variant="small" style={{ width: 62 }}>
-            {MODALITY_NAMES[k]}
+            {astro.modalities[k]}
           </T>
           <Bar value={(modalities[k] / mTotal) * 100} color={Colors.accent} />
           <T variant="mono" style={{ width: 38, textAlign: 'right' }}>
-            {Math.round((modalities[k] / mTotal) * 100)}%
+            {t.common.percent(Math.round((modalities[k] / mTotal) * 100))}
           </T>
         </Row>
       ))}
@@ -346,6 +356,8 @@ export function BalanceBars({ elements, modalities }: { elements: ElementBalance
  * "Denge" sekmesine gömülü kalmamalı.
  */
 export function ElementStrip({ elements }: { elements: ElementBalance }) {
+  const t = useT();
+  const astro = useAstro();
   const ElementColors = useElementColors();
   const total = Object.values(elements).reduce((a, b) => a + b, 0) || 1;
   const keys = Object.keys(elements) as (keyof ElementBalance)[];
@@ -353,8 +365,8 @@ export function ElementStrip({ elements }: { elements: ElementBalance }) {
   return (
     <Card style={{ gap: 8 }}>
       <Row style={{ justifyContent: 'space-between' }}>
-        <T variant="label">Element dengesi</T>
-        <T variant="caption">en zayıf: {ELEMENT_NAMES[weakest]}</T>
+        <T variant="label">{t.chart.elementBalance}</T>
+        <T variant="caption">{t.chart.weakest(astro.elements[weakest])}</T>
       </Row>
       <Row gap={6}>
         {keys.map((k) => {
@@ -363,7 +375,7 @@ export function ElementStrip({ elements }: { elements: ElementBalance }) {
             <View key={k} style={{ flex: Math.max(1, elements[k]), gap: 5 }}>
               <View style={{ height: 8, borderRadius: 4, backgroundColor: ElementColors[k] }} />
               <T variant="caption" color={ElementColors[k]} numberOfLines={1}>
-                {ELEMENT_NAMES[k]} %{pct}
+                {astro.elements[k]} {t.common.percent(pct)}
               </T>
             </View>
           );
@@ -375,12 +387,13 @@ export function ElementStrip({ elements }: { elements: ElementBalance }) {
 
 /** Üçlü özet: Güneş / Ay / Yükselen */
 export function BigThree({ chart }: { chart: NatalChart }) {
+  const astro = useAstro();
   const signColor = useSignColor();
   const big = bigSets[useScheme()];
-  const items: { label: string; id: BodyId; sign: number }[] = [
-    { label: 'Güneş', id: 'sun', sign: chart.summary.sunSign },
-    { label: 'Ay', id: 'moon', sign: chart.summary.moonSign },
-    { label: 'Yükselen', id: 'asc', sign: chart.summary.ascSign },
+  const items: { id: BodyId; sign: number }[] = [
+    { id: 'sun', sign: chart.summary.sunSign },
+    { id: 'moon', sign: chart.summary.moonSign },
+    { id: 'asc', sign: chart.summary.ascSign },
   ];
   return (
     <Row gap={Spacing.two} align="stretch">
@@ -390,12 +403,12 @@ export function BigThree({ chart }: { chart: NatalChart }) {
             <SignGlyph sign={it.sign} size={26} />
           </View>
           <T variant="heading" color={signColor(it.sign)} numberOfLines={1}>
-            {SIGNS[it.sign].name}
+            {astro.signs[it.sign]}
           </T>
           <Row gap={5}>
             <BodyGlyph id={it.id} size={13} />
             <T variant="caption" numberOfLines={1}>
-              {it.label}
+              {astro.bodies[it.id]}
             </T>
           </Row>
         </View>

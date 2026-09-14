@@ -8,9 +8,9 @@
 import { useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { HOUSE_SYSTEM_NAMES } from '@/astro/constants';
 import type { BodyId, NatalChart } from '@/astro/types';
 import { MaxContentWidth, Radius, Spacing, forEachScheme, useColors, useScheme } from '@/constants/theme';
+import { useAstro, useT, type Messages } from '@/i18n';
 import type { Profile } from '@/store/useAppStore';
 
 import { ChartWheel } from './ChartWheel';
@@ -19,12 +19,14 @@ import { Card, Chip, Row, T } from './ui';
 
 type Section = 'planets' | 'houses' | 'aspects' | 'balance';
 
-const SECTIONS: [Section, string][] = [
-  ['planets', 'Gezegenler'],
-  ['houses', 'Evler'],
-  ['aspects', 'Açılar'],
-  ['balance', 'Denge'],
-];
+function sections(t: Messages): [Section, string][] {
+  return [
+    ['planets', t.chart.planets],
+    ['houses', t.chart.houses],
+    ['aspects', t.chart.aspects],
+    ['balance', t.chart.balance],
+  ];
+}
 
 export function ChartView({
   chart,
@@ -36,6 +38,8 @@ export function ChartView({
   showMinor: boolean;
 }) {
   const Colors = useColors();
+  const t = useT();
+  const astro = useAstro();
   const s = styleSets[useScheme()];
   const { width } = useWindowDimensions();
   const [selected, setSelected] = useState<BodyId | null>(null);
@@ -51,27 +55,27 @@ export function ChartView({
       <View style={s.sky}>
         <ChartWheel chart={chart} size={wheelSize} showAspects={showAspects} showMinor={showMinor} selected={selected} onSelect={setSelected} />
         <Row gap={Spacing.two} style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
-          <Chip label="Açılar" icon="git-network-outline" active={showAspects} onPress={() => setShowAspects((v) => !v)} />
+          <Chip label={t.chart.aspects} icon="git-network-outline" active={showAspects} onPress={() => setShowAspects((v) => !v)} />
           {/* Bilgi etiketi, kısayol değil: ev sistemi Ayarlar'dan değişir */}
-          <Chip label={HOUSE_SYSTEM_NAMES[chart.houses.system]} icon="grid-outline" />
-          {chart.houses.fallbackFrom && <Chip label="Kutup enlemi: Porphyry" color={Colors.warning} active />}
-          {profile.timeUnknown && <Chip label="Saat bilinmiyor" color={Colors.warning} active />}
+          <Chip label={astro.houseSystems[chart.houses.system]} icon="grid-outline" />
+          {chart.houses.fallbackFrom && <Chip label={t.chart.polarFallback} color={Colors.warning} active />}
+          {profile.timeUnknown && <Chip label={t.chart.timeUnknown} color={Colors.warning} active />}
         </Row>
       </View>
 
       {selected && <BodyDetail chart={chart} id={selected} />}
 
       <View style={{ gap: Spacing.two }}>
-        <T variant="label">Üç temel</T>
+        <T variant="label">{t.chart.threeBasics}</T>
         <BigThree chart={chart} />
       </View>
 
       <ElementStrip elements={chart.elements} />
 
       <View style={{ gap: Spacing.two }}>
-        <T variant="label">Haritanın detayları</T>
+        <T variant="label">{t.chart.details}</T>
         <Row gap={Spacing.two} style={{ flexWrap: 'wrap' }}>
-          {SECTIONS.map(([k, label]) => (
+          {sections(t).map(([k, label]) => (
             <Chip key={k} label={label} active={section === k} onPress={() => setSection(k)} />
           ))}
         </Row>
@@ -82,7 +86,7 @@ export function ChartView({
       {section === 'aspects' && (
         <>
           <Card>
-            <T variant="label">Açı matrisi</T>
+            <T variant="label">{t.chart.aspectMatrix}</T>
             <AspectGrid chart={chart} />
           </Card>
           <AspectList aspects={chart.aspects} />
@@ -92,12 +96,12 @@ export function ChartView({
         <>
           <BalanceBars elements={chart.elements} modalities={chart.modalities} />
           <Card>
-            <T variant="label">Teknik</T>
+            <T variant="label">{t.chart.technical}</T>
             <T variant="small">UTC: {chart.meta.utc.toISOString().replace('T', ' ').slice(0, 16)}</T>
             <T variant="small">Jülyen günü: {chart.meta.jd.toFixed(5)}</T>
             <T variant="small">Yıldız zamanı (RAMC): {chart.meta.ramc.toFixed(3)}°</T>
             <T variant="small">Ekliptik eğikliği: {chart.meta.obliquity.toFixed(4)}°</T>
-            <T variant="small">Düğüm: {chart.options.nodeType === 'true' ? 'Gerçek' : 'Ortalama'}</T>
+            <T variant="small">Düğüm: {chart.options.nodeType === 'true' ? t.chart.nodeTrue : t.chart.nodeMean}</T>
           </Card>
         </>
       )}

@@ -5,21 +5,18 @@ import { Pressable, Share, StyleSheet, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
 import { THEMES, THEME_ORDER, type InterpretationTheme } from '@/ai/prompts';
-import { BODIES } from '@/astro/constants';
 import { buildDailyBrief, type BriefItem } from '@/astro/daily';
 import { formatLocal } from '@/astro/time';
-import type { BodyId } from '@/astro/types';
 import { Button, Card, Chip, EmptyState, Row, Screen, T } from '@/components/ui';
 import { ChartView } from '@/components/ChartView';
 import { DailySky } from '@/components/DailySky';
 import { ProfileChips } from '@/components/ProfileSwitcher';
 import { FontFamily, Radius, Spacing, forEachScheme, useColors, useScheme, type Palette } from '@/constants/theme';
 import { useNatalChart, useTransits } from '@/hooks/useChart';
+import { useFormat, useLocale, useT } from '@/i18n';
 import { useActiveProfile, useAppStore } from '@/store/useAppStore';
 
 type Tab = 'today' | 'chart';
-
-const bodyName = (id: BodyId) => BODIES[id].name;
 
 /** Günün özeti yerel öğleye göre hesaplanır: gün boyunca aynı kalır. */
 function noonOf(ms: number): Date {
@@ -30,6 +27,9 @@ function noonOf(ms: number): Date {
 
 export default function HomeScreen() {
   const Colors = useColors();
+  const t = useT();
+  const locale = useLocale();
+  const fmt = useFormat();
   const s = styleSets[useScheme()];
   const router = useRouter();
   const profile = useActiveProfile();
@@ -49,14 +49,14 @@ export default function HomeScreen() {
   );
   const noon = useMemo(() => noonOf(nowMs), [nowMs]);
   const report = useTransits(chart, noon);
-  const brief = useMemo(() => (report ? buildDailyBrief(report, bodyName) : null), [report]);
+  const brief = useMemo(() => (report ? buildDailyBrief(report, locale) : null), [report, locale]);
 
   const share = useCallback(() => {
     if (!brief) return;
     // Paylaşım her platformda yok (web'de tarayıcıya bağlı); başarısız olursa
     // sessizce geçilir, ekran kırılmaz.
     try {
-      void Share.share({ message: `${brief.pulse}\n\n— Doğum Haritası` })?.catch?.(() => {});
+      void Share.share({ message: brief.pulse })?.catch?.(() => {});
     } catch {
       /* paylaşım desteklenmiyor */
     }
@@ -69,21 +69,21 @@ export default function HomeScreen() {
       <Screen>
         <EmptyState
           icon="sparkles-outline"
-          title="Güne haritanla başla"
-          text="Doğum tarihi, saati ve yerini gir; bugünün gökyüzünün sana ne söylediğini her sabah burada gör."
-          action={<Button title="Harita Oluştur" icon="add" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: 'new' } })} />}
+          title={t.home.emptyTitle}
+          text={t.home.emptyText}
+          action={<Button title={t.common.createChart} icon="add" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: 'new' } })} />}
         />
       </Screen>
     );
   }
 
-  const today = noon.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
+  const today = fmt.dayLong(noon);
   const birthLine = chart ? formatLocal(chart.meta.utc, chart.meta.timeZone, !profile.timeUnknown) : `${profile.day}.${profile.month}.${profile.year}`;
 
   return (
     <Screen contentStyle={{ gap: Spacing.three }}>
       <View style={{ gap: 2 }}>
-        <T variant="display">Merhaba, {profile.name.split(' ')[0]}</T>
+        <T variant="display">{t.home.greeting(profile.name.split(' ')[0])}</T>
         <T variant="small">{today}</T>
       </View>
 
@@ -94,7 +94,7 @@ export default function HomeScreen() {
       {tab === 'today' ? (
         !brief ? (
           <Card>
-            <T color={Colors.danger}>Bugünün gökyüzü hesaplanamadı. Kişi bilgilerini kontrol et.</T>
+            <T color={Colors.danger}>{t.home.skyFailed}</T>
           </Card>
         ) : (
           <>
@@ -104,7 +104,7 @@ export default function HomeScreen() {
               <View style={s.pulseCard}>
                 <View style={s.pulseBadge}>
                   <T variant="caption" color={Colors.textSecondary}>
-                    Kozmik nabız
+                    {t.home.cosmicPulse}
                   </T>
                 </View>
                 <T variant="heading" style={s.pulseText}>
@@ -112,7 +112,7 @@ export default function HomeScreen() {
                 </T>
                 <Pressable onPress={share} hitSlop={8}>
                   <T variant="small" color={Colors.textSecondary} style={s.shareLink}>
-                    Sosyal medyada paylaş
+                    {t.home.share}
                   </T>
                 </Pressable>
                 <T variant="caption" style={{ textAlign: 'center' }}>
@@ -124,8 +124,8 @@ export default function HomeScreen() {
             <Card>
               <Row style={{ justifyContent: 'space-between' }}>
                 <View style={{ flex: 1, gap: 2 }}>
-                  <T variant="small">Enerji seviyen</T>
-                  <T variant="display">%{brief.energy}</T>
+                  <T variant="small">{t.home.energy}</T>
+                  <T variant="display">{t.common.percent(brief.energy)}</T>
                   <T variant="caption">{brief.moonLine}</T>
                 </View>
                 <EnergyRing value={brief.energy} c={Colors} />
@@ -133,24 +133,24 @@ export default function HomeScreen() {
             </Card>
 
             <BriefList
-              title="Bugün güçlü yanların"
+              title={t.home.strengths}
               icon="trending-up"
               tint={Colors.success}
               items={brief.strengths}
-              empty="Bugün natal haritanla dar bir uyumlu açı yok; kendi ritmini kurmak sana kalmış."
+              empty={t.home.noStrengths}
             />
             <BriefList
-              title="Dikkat edilecekler"
+              title={t.home.cautions}
               icon="alert-circle"
               tint={Colors.warning}
               items={brief.cautions}
-              empty="Bugün zorlayıcı bir açı görünmüyor. Rahat bir gün."
+              empty={t.home.noCautions}
             />
           </>
         )
       ) : !chart ? (
         <Card>
-          <T color={Colors.danger}>Harita hesaplanamadı. Kişi bilgilerini kontrol et.</T>
+          <T color={Colors.danger}>{t.chart.failed}</T>
         </Card>
       ) : (
         <>
@@ -163,23 +163,23 @@ export default function HomeScreen() {
           {/* Yorum daveti — sorulan bir soru gibi, dolu bir kutu gibi değil */}
           <Card tone="primary" flat style={{ gap: Spacing.three }}>
             <View style={{ gap: 2 }}>
-              <T variant="heading">Bugün neyi merak ediyorsun?</T>
-              <T variant="small">{THEMES[theme].tagline}</T>
+              <T variant="heading">{t.chart.interpretQuestion}</T>
+              <T variant="small">{t.theme[theme].tagline}</T>
             </View>
             <Row gap={Spacing.two} style={{ flexWrap: 'wrap' }}>
-              {THEME_ORDER.map((t) => (
+              {THEME_ORDER.map((k) => (
                 <Chip
-                  key={t}
-                  label={THEMES[t].name}
-                  icon={THEMES[t].icon as never}
-                  active={theme === t}
-                  onPress={() => setTheme(t)}
-                  style={theme === t ? undefined : s.themeChip}
+                  key={k}
+                  label={t.theme[k].name}
+                  icon={THEMES[k].icon as never}
+                  active={theme === k}
+                  onPress={() => setTheme(k)}
+                  style={theme === k ? undefined : s.themeChip}
                 />
               ))}
             </Row>
             <Button
-              title="Haritamı Yorumla"
+              title={t.chart.interpretCta}
               icon="sparkles"
               onPress={() => router.push({ pathname: '/interpret', params: { kind: 'natal', a: profile.id, theme } })}
             />
@@ -192,12 +192,13 @@ export default function HomeScreen() {
 
 /* ------------------------------------------------------------------ */
 
-function SegmentedTabs({ value, onChange }: { value: Tab; onChange: (t: Tab) => void }) {
+function SegmentedTabs({ value, onChange }: { value: Tab; onChange: (next: Tab) => void }) {
   const Colors = useColors();
+  const t = useT();
   const s = styleSets[useScheme()];
   const tabs: [Tab, string][] = [
-    ['today', 'Bugün'],
-    ['chart', 'Haritam'],
+    ['today', t.home.today],
+    ['chart', t.home.chart],
   ];
   return (
     <Row gap={Spacing.four} style={s.segments}>

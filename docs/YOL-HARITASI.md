@@ -71,20 +71,25 @@ His olarak Astromatik + Headspace + Meditasyon karışımı.
 
 ---
 
-## 2b. Dil desteği — **KARAR BEKLİYOR**
+## 2b. Dil desteği — tamamlandı
 
-Uygulamada dil seçeneği yok; her şey Türkçe yazılı. Gerçek bir dil seçimi üç
-ayrı katmanı ilgilendiriyor ve maliyetleri çok farklı:
+Uygulama beş dilli: **Türkçe, İngilizce, Almanca, Fransızca, Arapça.**
 
-| Katman | İçerik | İş |
+| Katman | Nerede | Durum |
 | --- | --- | --- |
-| Yapay zekâ yorumunun dili | `src/ai/promptText.ts` sistem istemi | **Küçük.** İsteme tek satır dil talimatı; model zaten çok dilli. |
-| Arayüz metinleri | ~250 dizge, 16 dosyaya gömülü | **Orta.** Önce bir i18n katmanı (dizge kataloğu + `t()` kancası), sonra çeviri. |
-| Astroloji içeriği | `daily.ts` 108 cümle + ev/burç/gezegen adları, `themes.ts`, `houseStyle.ts` | **Büyük.** Üslup ve terminoloji çevirisi; makine çevirisi kalitesi düşürür. |
+| Arayüz (~195 anahtar × 5) | `src/i18n/messages.ts` | Bitti |
+| Astroloji terimleri (burç, gezegen, ev, açı, onur, Ay evresi) | `src/astro/i18n.ts` | Bitti |
+| Günün özeti (108 cümle + başlık ve kalıplar × 5) | `src/astro/dailyText.ts` | Bitti |
+| Yapay zekâ yorumunun dili | `src/ai/promptText.ts` → `OUTPUT LANGUAGE` | Bitti |
+| Sağdan sola yerleşim (Arapça) | `src/app/_layout.tsx` | Bitti |
 
-Karar gereken: hangi dil(ler), ve yorum dili arayüz dilini mi izlesin yoksa
-ayrı mı seçilsin. En ucuz ilk adım yorum dili; arayüz ve içerik sonra
-aşamalı gelebilir.
+Eksiksizlik iki katmanda korunuyor: Türkçe katalog tipin kaynağı olduğu için
+eksik anahtar `tsc` hatası verir, `tests/i18n/completeness.test.ts` de üç
+katalogun yapısını karşılaştırır ve boş dizge bırakılmasını engeller.
+
+**Kalan:** Çeviriler anadili konuşanlarca gözden geçirilmedi. Özellikle
+Arapça astroloji terminolojisi ve ev üslubu kuralları için bir gözden geçirme
+önerilir. Şehir adları (`cities.json`) yerel adlarıyla kalıyor, çevrilmiyor.
 
 ## 3. Ödeme katmanı — **KARAR BEKLİYOR**
 

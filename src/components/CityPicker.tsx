@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MaxContentWidth, Radius, Spacing, forEachScheme, useColors, useScheme } from '@/constants/theme';
 import { cityLabel, popularCities, searchCities, type City } from '@/data/cities';
+import { useT } from '@/i18n';
 
 import { ListRow, T } from './ui';
 
@@ -17,6 +18,7 @@ export function CityPicker({
   onClose: () => void;
   onSelect: (city: City) => void;
 }) {
+  const t = useT();
   const styles = stylesSets[useScheme()];
   const Colors = useColors();
   const [query, setQuery] = useState('');
@@ -39,8 +41,8 @@ export function CityPicker({
       <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         <View style={styles.inner}>
           <View style={styles.header}>
-            <T variant="heading">Doğum Yeri</T>
-            <Pressable onPress={close} hitSlop={12} accessibilityLabel="Kapat">
+            <T variant="heading">{t.city.title}</T>
+            <Pressable onPress={close} hitSlop={12} accessibilityLabel={t.common.close}>
               <Ionicons name="close" size={24} color={Colors.textSecondary} />
             </Pressable>
           </View>
@@ -49,7 +51,7 @@ export function CityPicker({
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder="Şehir veya ilçe ara (örn. Kadıköy, Ankara, Berlin)"
+              placeholder={t.city.search}
               placeholderTextColor={Colors.muted}
               style={styles.input}
               autoFocus
@@ -62,7 +64,7 @@ export function CityPicker({
               </Pressable>
             )}
           </View>
-          {debounced.trim().length < 2 && <T variant="label" style={{ marginBottom: 4 }}>Popüler</T>}
+          {debounced.trim().length < 2 && <T variant="label" style={{ marginBottom: 4 }}>{t.city.popular}</T>}
           <FlatList
             data={results}
             keyExtractor={(c) => `${c.name}-${c.lat}-${c.lng}`}
@@ -81,7 +83,7 @@ export function CityPicker({
             )}
             ListEmptyComponent={
               <View style={{ padding: Spacing.four, alignItems: 'center' }}>
-                <T variant="small">Sonuç yok. Farklı bir yazım deneyin.</T>
+                <T variant="small">{t.city.noResults}</T>
               </View>
             }
           />

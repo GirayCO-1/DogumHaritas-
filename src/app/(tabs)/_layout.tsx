@@ -3,9 +3,11 @@ import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FontFamily, TabBarBaseHeight, useColors } from '@/constants/theme';
+import { useT } from '@/i18n';
 
 export default function TabsLayout() {
   const Colors = useColors();
+  const t = useT();
   // Android kenardan kenara çizer: sekme çubuğu sistem gezinme çubuğunun
   // altında kalmasın diye alt güvenli alan payı eklenir.
   const insets = useSafeAreaInsets();
@@ -32,28 +34,28 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Anasayfa',
+          title: t.tabs.home,
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="transits"
         options={{
-          title: 'Gökyüzü',
+          title: t.tabs.sky,
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'sunny' : 'sunny-outline'} size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="synastry"
         options={{
-          title: 'Uyum',
+          title: t.tabs.synastry,
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'heart' : 'heart-outline'} size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profiles"
         options={{
-          title: 'Kişiler',
+          title: t.tabs.people,
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'people' : 'people-outline'} size={size} color={color} />,
         }}
       />

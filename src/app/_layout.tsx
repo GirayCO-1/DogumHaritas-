@@ -10,14 +10,18 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo } from 'react';
+import { I18nManager } from 'react-native';
 
 import { FontFamily, useColors } from '@/constants/theme';
+import { useRtl, useT } from '@/i18n';
 import { useAppStore } from '@/store/useAppStore';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const Colors = useColors();
+  const t = useT();
+  const rtl = useRtl();
   const hydrated = useAppStore((s) => s.hydrated);
   /**
    * Yazı tipleri yüklenmeden ağaç çizilmemeli. Android her Text'i bir kez
@@ -53,6 +57,18 @@ export default function RootLayout() {
 
   const fontsReady = fontsLoaded || fontError !== null;
 
+  /**
+   * Arapça sağdan sola yazılır. React Native yerleşim yönünü açılışta
+   * belirler; çalışırken değiştirmek ekranın yarısını ters çevirebildiği
+   * için burada yalnızca bir sonraki açılış için kaydediyoruz. Ayarlar
+   * ekranı kullanıcıya uygulamayı yeniden başlatmasını söylüyor.
+   */
+  useEffect(() => {
+    if (I18nManager.isRTL === rtl) return;
+    I18nManager.allowRTL(rtl);
+    I18nManager.forceRTL(rtl);
+  }, [rtl]);
+
   useEffect(() => {
     if (hydrated && fontsReady) SplashScreen.hideAsync().catch(() => {});
   }, [hydrated, fontsReady]);
@@ -78,9 +94,9 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: Colors.background },
         }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="profile/[id]" options={{ title: 'Kişi', presentation: 'modal' }} />
-        <Stack.Screen name="settings" options={{ title: 'Ayarlar' }} />
-        <Stack.Screen name="interpret" options={{ title: 'Yorum' }} />
+        <Stack.Screen name="profile/[id]" options={{ title: t.people.edit, presentation: 'modal' }} />
+        <Stack.Screen name="settings" options={{ title: t.common.settings }} />
+        <Stack.Screen name="interpret" options={{ title: t.interpret.natal }} />
       </Stack>
     </ThemeProvider>
   );
