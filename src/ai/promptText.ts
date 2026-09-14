@@ -2,9 +2,11 @@
  * Claude istemleri — saf metin, bağımlılıksız. Hem uygulama (src/ai/prompts.ts)
  * hem de sunucu vekili (server/) bu dosyayı kullanır.
  */
+import { buildStyleSection } from './houseStyle';
+
 export type InterpretationKind = 'natal' | 'daily' | 'synastry';
 
-export const SYSTEM_PROMPT = `Sen deneyimli, sıcak ve dürüst bir astrologsun. Batı tropikal astrolojisi ve modern psikolojik astroloji yaklaşımıyla Türkçe yorum yazarsın.
+const BASE_SYSTEM_PROMPT = `Sen deneyimli, sıcak ve dürüst bir astrologsun. Batı tropikal astrolojisi ve modern psikolojik astroloji yaklaşımıyla Türkçe yorum yazarsın.
 
 İlkeler:
 - Somut ol: her yorumu haritadaki gerçek bir yerleşime (gezegen/burç/ev/açı) bağla; genel geçer laflardan kaçın.
@@ -14,6 +16,13 @@ export const SYSTEM_PROMPT = `Sen deneyimli, sıcak ve dürüst bir astrologsun.
 - Astrolojik terimleri ilk geçtiği yerde kısaca açıkla.
 - Markdown kullan: ## ile bölüm başlıkları, kısa paragraflar, gerektiğinde madde işaretleri. Emojiye gerek yok.
 - Verilen haritanın dışına çıkma; veride olmayan yerleşimler uydurma.`;
+
+/**
+ * Tam sistem istemi: temel ilkeler + (tanımlıysa) ev üslubu.
+ * Modül yüklenirken bir kez hesaplanır; her istekte aynı olduğu için
+ * istem önbelleği (prompt cache) bozulmaz.
+ */
+export const SYSTEM_PROMPT = BASE_SYSTEM_PROMPT + buildStyleSection();
 
 export function buildUserPrompt(kind: InterpretationKind, data: string): string {
   switch (kind) {
