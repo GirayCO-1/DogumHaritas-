@@ -18,10 +18,10 @@ function sunSignOf(p: Profile): number | null {
 
 function confirmDelete(name: string, onOk: () => void) {
   if (Platform.OS === 'web') {
-    if (globalThis.confirm?.(`${name} profilini silmek istediğine emin misin?`)) onOk();
+    if (globalThis.confirm?.(`${name} kaydını silmek istediğine emin misin?`)) onOk();
     return;
   }
-  Alert.alert('Profili sil', `${name} profilini silmek istediğine emin misin?`, [
+  Alert.alert('Kişiyi sil', `${name} kaydını silmek istediğine emin misin?`, [
     { text: 'Vazgeç', style: 'cancel' },
     { text: 'Sil', style: 'destructive', onPress: onOk },
   ]);
@@ -41,7 +41,7 @@ export default function ProfilesScreen() {
   return (
     <Screen>
       <Row style={{ justifyContent: 'space-between' }}>
-        <T variant="title">Profiller</T>
+        <T variant="title">Kişiler</T>
         <Pressable onPress={() => router.push('/settings')} hitSlop={10} accessibilityLabel="Ayarlar">
           <Ionicons name="settings-outline" size={22} color={Colors.textSecondary} />
         </Pressable>
@@ -50,9 +50,9 @@ export default function ProfilesScreen() {
       {profiles.length === 0 ? (
         <EmptyState
           icon="people-outline"
-          title="Henüz profil yok"
-          text="Kendin, sevdiklerin ve merak ettiklerin için ayrı profiller oluşturabilirsin."
-          action={<Button title="Profil Oluştur" icon="add" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: 'new' } })} />}
+          title="Henüz kişi yok"
+          text="Kendin, sevdiklerin ve merak ettiklerin için ayrı kişiler ekleyebilirsin."
+          action={<Button title="Kişi Ekle" icon="add" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: 'new' } })} />}
         />
       ) : (
         <>
@@ -91,9 +91,9 @@ export default function ProfilesScreen() {
             })}
           </Card>
           <T variant="caption" style={{ textAlign: 'center' }}>
-            {profiles.length} profil · Veriler yalnızca bu cihazda saklanır
+            {profiles.length} kişi · Veriler yalnızca bu cihazda saklanır
           </T>
-          <Button title="Yeni Profil" icon="add" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: 'new' } })} />
+          <Button title="Yeni Kişi" icon="add" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: 'new' } })} />
         </>
       )}
     </Screen>

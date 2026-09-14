@@ -190,7 +190,7 @@ export function ProfileForm({
         <Row style={{ justifyContent: 'space-between' }}>
           <View style={{ flex: 1 }}>
             <T variant="subheading">Bu benim haritam</T>
-            <T variant="small">Transitler ve günlük yorumlar bu profil için gösterilir.</T>
+            <T variant="small">Transitler ve günlük yorumlar bu kişi için gösterilir.</T>
           </View>
           <Switch value={f.isSelf} onValueChange={(v) => set('isSelf', v)} trackColor={{ true: Colors.primary, false: Colors.cardStrong }} thumbColor="#fff" />
         </Row>

@@ -42,8 +42,8 @@ export default function SynastryScreen() {
         <EmptyState
           icon="heart-outline"
           title="İlişki uyumu (sinastri)"
-          text="İki haritayı karşılaştırmak için en az iki profil gerekir. Partnerinin, arkadaşının ya da bir aile üyenin haritasını ekle."
-          action={<Button title={profiles.length ? 'İkinci Profili Ekle' : 'Profil Oluştur'} icon="add" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: 'new' } })} />}
+          text="İki haritayı karşılaştırmak için en az iki kişi gerekir. Partnerinin, arkadaşının ya da bir aile üyenin haritasını ekle."
+          action={<Button title={profiles.length ? 'İkinci Kişiyi Ekle' : 'Kişi Ekle'} icon="add" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: 'new' } })} />}
         />
       </Screen>
     );

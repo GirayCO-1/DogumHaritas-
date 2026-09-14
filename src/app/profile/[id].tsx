@@ -17,7 +17,7 @@ export default function ProfileEditScreen() {
   const existing = useMemo(() => (isNew ? null : profiles.find((p) => p.id === id) ?? null), [isNew, profiles, id]);
 
   const onSubmit = (draft: ProfileDraft) => {
-    // "Bu benim haritam" tek bir profilde olabilir
+    // "Bu benim haritam" tek bir kişide olabilir
     if (draft.isSelf) {
       for (const p of profiles) if (p.isSelf && p.id !== existing?.id) updateProfile(p.id, { isSelf: false });
     }
@@ -34,7 +34,7 @@ export default function ProfileEditScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: isNew ? 'Yeni Profil' : 'Profili Düzenle' }} />
+      <Stack.Screen options={{ title: isNew ? 'Yeni Kişi' : 'Kişiyi Düzenle' }} />
       <Screen edges={['bottom']}>
         <T variant="small">
           Doğum saati ne kadar kesinse Yükselen burç ve ev yerleşimleri o kadar doğru olur. Saat dilimi ve yaz saati, seçilen yere ve tarihe göre otomatik uygulanır.

@@ -78,7 +78,7 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: Colors.background },
         }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="profile/[id]" options={{ title: 'Profil', presentation: 'modal' }} />
+        <Stack.Screen name="profile/[id]" options={{ title: 'Kişi', presentation: 'modal' }} />
         <Stack.Screen name="settings" options={{ title: 'Ayarlar' }} />
         <Stack.Screen name="interpret" options={{ title: 'Yorum' }} />
       </Stack>

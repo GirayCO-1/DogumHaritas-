@@ -66,8 +66,8 @@ export default function TransitsScreen() {
         <EmptyState
           icon="sunny-outline"
           title="Günlük transitler"
-          text="Bugünün gökyüzünün doğum haritanla yaptığı açıları görmek için önce bir profil oluştur."
-          action={<Button title="Profil Oluştur" icon="add" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: 'new' } })} />}
+          text="Bugünün gökyüzünün doğum haritanla yaptığı açıları görmek için önce bir kişi ekle."
+          action={<Button title="Kişi Ekle" icon="add" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: 'new' } })} />}
         />
       </Screen>
     );

@@ -13,7 +13,7 @@ import { Button, Card, Chip, EmptyState, Row, Screen, T } from '@/components/ui'
 import { ChartView } from '@/components/ChartView';
 import { DailySky } from '@/components/DailySky';
 import { ProfileChips } from '@/components/ProfileSwitcher';
-import { FontFamily, Radius, Spacing, forEachScheme, shadow, useColors, useScheme, type Palette } from '@/constants/theme';
+import { FontFamily, Radius, Spacing, forEachScheme, useColors, useScheme, type Palette } from '@/constants/theme';
 import { useNatalChart, useTransits } from '@/hooks/useChart';
 import { useActiveProfile, useAppStore } from '@/store/useAppStore';
 
@@ -82,15 +82,10 @@ export default function HomeScreen() {
 
   return (
     <Screen contentStyle={{ gap: Spacing.three }}>
-      <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <View style={{ flex: 1, gap: 2 }}>
-          <T variant="display">Merhaba, {profile.name.split(' ')[0]}</T>
-          <T variant="small">{today}</T>
-        </View>
-        <Pressable onPress={() => router.push('/settings')} hitSlop={10} style={s.iconBtn} accessibilityLabel="Ayarlar">
-          <Ionicons name="settings-outline" size={20} color={Colors.textSecondary} />
-        </Pressable>
-      </Row>
+      <View style={{ gap: 2 }}>
+        <T variant="display">Merhaba, {profile.name.split(' ')[0]}</T>
+        <T variant="small">{today}</T>
+      </View>
 
       <ProfileChips selectedId={profile.id} onSelect={setActive} />
 
@@ -99,7 +94,7 @@ export default function HomeScreen() {
       {tab === 'today' ? (
         !brief ? (
           <Card>
-            <T color={Colors.danger}>Bugünün gökyüzü hesaplanamadı. Profil bilgilerini kontrol et.</T>
+            <T color={Colors.danger}>Bugünün gökyüzü hesaplanamadı. Kişi bilgilerini kontrol et.</T>
           </Card>
         ) : (
           <>
@@ -155,22 +150,13 @@ export default function HomeScreen() {
         )
       ) : !chart ? (
         <Card>
-          <T color={Colors.danger}>Harita hesaplanamadı. Profil bilgilerini kontrol et.</T>
+          <T color={Colors.danger}>Harita hesaplanamadı. Kişi bilgilerini kontrol et.</T>
         </Card>
       ) : (
         <>
-          <Row style={{ justifyContent: 'space-between' }}>
-            <T variant="small" style={{ flex: 1 }}>
-              {birthLine} · {profile.placeName}
-            </T>
-            <Pressable
-              onPress={() => router.push({ pathname: '/profile/[id]', params: { id: profile.id } })}
-              hitSlop={10}
-              style={s.iconBtn}
-              accessibilityLabel="Profili düzenle">
-              <Ionicons name="create-outline" size={20} color={Colors.textSecondary} />
-            </Pressable>
-          </Row>
+          <T variant="small">
+            {birthLine} · {profile.placeName}
+          </T>
 
           <ChartView chart={chart} profile={profile} showMinor={showMinor} />
 
@@ -302,15 +288,6 @@ function EnergyRing({ value, c }: { value: number; c: Palette }) {
 
 const styleSets = forEachScheme((c) =>
   StyleSheet.create({
-    iconBtn: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: c.card,
-      ...(c.scheme === 'light' ? shadow(c, 1) : { borderWidth: StyleSheet.hairlineWidth, borderColor: c.border }),
-    },
     segments: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border },
     segment: { paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: 'transparent' },
     pulseCard: {

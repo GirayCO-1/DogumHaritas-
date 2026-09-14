@@ -228,7 +228,7 @@ export default function SettingsScreen() {
       <Card>
         <T variant="small">Doğum Haritası v{Constants.expoConfig?.version ?? '1.0.0'}</T>
         <T variant="small">Gezegen konumları: astronomy-engine (VSOP87 tabanlı, ±1′). Chiron: Moshier efemerisi. Şehir veritabanı: GeoNames ({cityCount().toLocaleString('tr-TR')} yerleşim). Saat dilimleri: IANA tz.</T>
-        <T variant="small">Tüm hesaplar cihazda yapılır; profiller yalnızca bu cihazda saklanır.</T>
+        <T variant="small">Tüm hesaplar cihazda yapılır; kişiler yalnızca bu cihazda saklanır.</T>
       </Card>
     </Screen>
   );

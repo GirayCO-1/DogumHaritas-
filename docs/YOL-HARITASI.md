@@ -60,14 +60,31 @@ His olarak Astromatik + Headspace + Meditasyon karışımı.
 ### Kalan
 - Gökyüzü, Uyum, Profiller, Yorum ekranları yeni dile taşındı ama ekran ekran
   gözden geçirilmedi
-- Mükerrer giriş noktaları: Ayarlar dişlisi (Anasayfa + Profiller), yeni
-  profil (çip + Profiller düğmesi), profil düzenleme (Haritam + Profiller),
-  Ay evresi (Anasayfa enerji kartı + Gökyüzü kartı). Hangilerinin
-  sadeleşeceği kullanıcıya soruldu.
+- Mükerrer giriş noktaları sadeleştirildi: Ayarlar yalnızca Kişiler'de, yeni
+  kişi yalnızca Kişiler'de, kişi düzenleme yalnızca Kişiler'de, ev sistemi
+  çipi artık kısayol değil. Ay evresinin iki yerde kalmasına karar verildi
+  (Anasayfa'da tek satır özet, Gökyüzü'nde ayrıntılı kart).
+- **Dil seçeneği** isteniyor: uygulama şu an Türkçe'ye gömülü. Kapsam ve
+  hedef dil(ler) netleşmeyi bekliyor — aşağıya bak.
 - Boş durumlar, yükleniyor durumları, geçiş animasyonları
 - Uygulama simgesi ve açılış ekranı hâlâ koyu temaya göre
 
 ---
+
+## 2b. Dil desteği — **KARAR BEKLİYOR**
+
+Uygulamada dil seçeneği yok; her şey Türkçe yazılı. Gerçek bir dil seçimi üç
+ayrı katmanı ilgilendiriyor ve maliyetleri çok farklı:
+
+| Katman | İçerik | İş |
+| --- | --- | --- |
+| Yapay zekâ yorumunun dili | `src/ai/promptText.ts` sistem istemi | **Küçük.** İsteme tek satır dil talimatı; model zaten çok dilli. |
+| Arayüz metinleri | ~250 dizge, 16 dosyaya gömülü | **Orta.** Önce bir i18n katmanı (dizge kataloğu + `t()` kancası), sonra çeviri. |
+| Astroloji içeriği | `daily.ts` 108 cümle + ev/burç/gezegen adları, `themes.ts`, `houseStyle.ts` | **Büyük.** Üslup ve terminoloji çevirisi; makine çevirisi kalitesi düşürür. |
+
+Karar gereken: hangi dil(ler), ve yorum dili arayüz dilini mi izlesin yoksa
+ayrı mı seçilsin. En ucuz ilk adım yorum dili; arayüz ve içerik sonra
+aşamalı gelebilir.
 
 ## 3. Ödeme katmanı — **KARAR BEKLİYOR**
 
