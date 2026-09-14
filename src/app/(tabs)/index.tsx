@@ -4,12 +4,15 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, Share, StyleSheet, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
+import { THEMES, THEME_ORDER, type InterpretationTheme } from '@/ai/prompts';
 import { BODIES } from '@/astro/constants';
 import { buildDailyBrief, type BriefItem } from '@/astro/daily';
+import { formatLocal } from '@/astro/time';
 import type { BodyId } from '@/astro/types';
-import { Button, Card, EmptyState, Row, Screen, T } from '@/components/ui';
+import { Button, Card, Chip, EmptyState, Row, Screen, T } from '@/components/ui';
 import { ChartView } from '@/components/ChartView';
 import { DailySky } from '@/components/DailySky';
+import { ProfileChips } from '@/components/ProfileSwitcher';
 import { FontFamily, Radius, Spacing, forEachScheme, shadow, useColors, useScheme, type Palette } from '@/constants/theme';
 import { useNatalChart, useTransits } from '@/hooks/useChart';
 import { useActiveProfile, useAppStore } from '@/store/useAppStore';
@@ -30,10 +33,12 @@ export default function HomeScreen() {
   const s = styleSets[useScheme()];
   const router = useRouter();
   const profile = useActiveProfile();
+  const setActive = useAppStore((st) => st.setActiveProfile);
   const hydrated = useAppStore((st) => st.hydrated);
   const showMinor = useAppStore((st) => st.settings.showMinorAspects);
   const chart = useNatalChart(profile);
   const [tab, setTab] = useState<Tab>('today');
+  const [theme, setTheme] = useState<InterpretationTheme>('general');
 
   // Sekmeye her dönüşte gün tazelenir; gün değişmediyse özet aynı kalır.
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -73,6 +78,7 @@ export default function HomeScreen() {
   }
 
   const today = noon.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
+  const birthLine = chart ? formatLocal(chart.meta.utc, chart.meta.timeZone, !profile.timeUnknown) : `${profile.day}.${profile.month}.${profile.year}`;
 
   return (
     <Screen contentStyle={{ gap: Spacing.three }}>
@@ -85,6 +91,8 @@ export default function HomeScreen() {
           <Ionicons name="settings-outline" size={20} color={Colors.textSecondary} />
         </Pressable>
       </Row>
+
+      <ProfileChips selectedId={profile.id} onSelect={setActive} />
 
       <SegmentedTabs value={tab} onChange={setTab} />
 
@@ -143,12 +151,6 @@ export default function HomeScreen() {
               items={brief.cautions}
               empty="Bugün zorlayıcı bir açı görünmüyor. Rahat bir gün."
             />
-
-            <Button
-              title="Bugünü Detaylı Yorumla"
-              icon="sparkles"
-              onPress={() => router.push({ pathname: '/interpret', params: { kind: 'daily', a: profile.id, theme: 'general' } })}
-            />
           </>
         )
       ) : !chart ? (
@@ -156,7 +158,47 @@ export default function HomeScreen() {
           <T color={Colors.danger}>Harita hesaplanamadı. Profil bilgilerini kontrol et.</T>
         </Card>
       ) : (
-        <ChartView chart={chart} profile={profile} showMinor={showMinor} />
+        <>
+          <Row style={{ justifyContent: 'space-between' }}>
+            <T variant="small" style={{ flex: 1 }}>
+              {birthLine} · {profile.placeName}
+            </T>
+            <Pressable
+              onPress={() => router.push({ pathname: '/profile/[id]', params: { id: profile.id } })}
+              hitSlop={10}
+              style={s.iconBtn}
+              accessibilityLabel="Profili düzenle">
+              <Ionicons name="create-outline" size={20} color={Colors.textSecondary} />
+            </Pressable>
+          </Row>
+
+          <ChartView chart={chart} profile={profile} showMinor={showMinor} />
+
+          {/* Yorum daveti — sorulan bir soru gibi, dolu bir kutu gibi değil */}
+          <Card tone="primary" flat style={{ gap: Spacing.three }}>
+            <View style={{ gap: 2 }}>
+              <T variant="heading">Bugün neyi merak ediyorsun?</T>
+              <T variant="small">{THEMES[theme].tagline}</T>
+            </View>
+            <Row gap={Spacing.two} style={{ flexWrap: 'wrap' }}>
+              {THEME_ORDER.map((t) => (
+                <Chip
+                  key={t}
+                  label={THEMES[t].name}
+                  icon={THEMES[t].icon as never}
+                  active={theme === t}
+                  onPress={() => setTheme(t)}
+                  style={theme === t ? undefined : s.themeChip}
+                />
+              ))}
+            </Row>
+            <Button
+              title="Haritamı Yorumla"
+              icon="sparkles"
+              onPress={() => router.push({ pathname: '/interpret', params: { kind: 'natal', a: profile.id, theme } })}
+            />
+          </Card>
+        </>
       )}
     </Screen>
   );
@@ -286,5 +328,7 @@ const styleSets = forEachScheme((c) =>
     pulseText: { textAlign: 'center', fontFamily: FontFamily.display, fontSize: 19, lineHeight: 29 },
     shareLink: { textDecorationLine: 'underline' },
     dot: { width: 7, height: 7, borderRadius: 4, marginTop: 7 },
+    // Davet kartının zemini zaten tonlu; etkin olmayan çipler beyaz kalsın
+    themeChip: { backgroundColor: c.card },
   }),
 );

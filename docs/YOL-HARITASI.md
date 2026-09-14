@@ -51,15 +51,19 @@ His olarak Astromatik + Headspace + Meditasyon karışımı.
   - Nabız cümlesi gezegen × açı başına 3 seçenekten gün numarasına göre
     dönüyor (108 cümle); zemin de `DailySky` ile her gün yeniden üretiliyor
     ve günü belirleyen gezegene göre renkleniyor
-  - Haritam: çark + üç temel + element dengesi + haritanın detayları
+  - Haritam: doğum bilgisi, çark, üç temel, element dengesi, haritanın
+    detayları ve tema seçimli natal yorum
+  - Sekme çubuğu dört sekme: Anasayfa · Gökyüzü · Uyum · Profiller. Ayrı
+    Harita sekmesi Anasayfa → Haritam ile aynı içeriği gösterdiği için
+    kaldırıldı.
 
 ### Kalan
 - Gökyüzü, Uyum, Profiller, Yorum ekranları yeni dile taşındı ama ekran ekran
   gözden geçirilmedi
-- **Harita sekmesi ile Anasayfa → Haritam aynı içeriği gösteriyor.** Ortak
-  bileşen (`ChartView`) kullanıldığı için kod tekrarı yok, ama gezinmede
-  tekrar var: Harita sekmesi kaldırılıp 4 sekmeye inilebilir (referans
-  uygulamalar öyle). Kullanıcı kararı bekliyor.
+- Mükerrer giriş noktaları: Ayarlar dişlisi (Anasayfa + Profiller), yeni
+  profil (çip + Profiller düğmesi), profil düzenleme (Haritam + Profiller),
+  Ay evresi (Anasayfa enerji kartı + Gökyüzü kartı). Hangilerinin
+  sadeleşeceği kullanıcıya soruldu.
 - Boş durumlar, yükleniyor durumları, geçiş animasyonları
 - Uygulama simgesi ve açılış ekranı hâlâ koyu temaya göre
 
