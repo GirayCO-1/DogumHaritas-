@@ -1,0 +1,152 @@
+import { describe, expect, it } from 'vitest';
+
+import { computeNatalChart } from '../../src/astro/chart';
+import { BODIES } from '../../src/astro/constants';
+import { buildDailyBrief, energyLevel } from '../../src/astro/daily';
+import { computeTransits } from '../../src/astro/transits';
+import type { BodyId, TransitAspect, TransitReport } from '../../src/astro/types';
+
+const bodyName = (id: BodyId) => BODIES[id].name;
+
+const NATAL = computeNatalChart({
+  name: 'Test',
+  year: 1989,
+  month: 7,
+  day: 20,
+  hour: 8,
+  minute: 30,
+  timeUnknown: false,
+  timeZone: 'Europe/Istanbul',
+  location: { lat: 39.9179, lng: 32.8627 },
+  placeName: 'Çankaya, Ankara',
+});
+
+function aspect(partial: Partial<TransitAspect>): TransitAspect {
+  return {
+    a: 'sun',
+    b: 'sun',
+    type: 'trine',
+    angle: 120,
+    separation: 120,
+    orb: 0,
+    maxOrb: 3,
+    applying: true,
+    strength: 1,
+    transitBody: 'sun',
+    natalBody: 'sun',
+    transitHouse: 1,
+    ...partial,
+  };
+}
+
+describe('günün özeti', () => {
+  it('gerçek bir transit raporundan özet üretir', () => {
+    const report = computeTransits(NATAL, new Date(Date.UTC(2026, 8, 14, 12, 0)));
+    const brief = buildDailyBrief(report, bodyName);
+
+    expect(brief.pulse.length).toBeGreaterThan(20);
+    expect(brief.energy).toBeGreaterThanOrEqual(12);
+    expect(brief.energy).toBeLessThanOrEqual(98);
+    expect(brief.moonLine).toMatch(/^Ay .+ burcunda · .+ · %\d+$/);
+    expect(brief.strengths.length).toBeLessThanOrEqual(3);
+    expect(brief.cautions.length).toBeLessThanOrEqual(2);
+  });
+
+  it('aynı gün için aynı sonucu verir (rastgelelik yok)', () => {
+    const report = computeTransits(NATAL, new Date(Date.UTC(2028, 3, 20, 12, 0)));
+    const a = buildDailyBrief(report, bodyName);
+    const b = buildDailyBrief(report, bodyName);
+    expect(a).toEqual(b);
+  });
+
+  it('her maddeyi farklı bir transit gezegeninden seçer', () => {
+    const report = computeTransits(NATAL, new Date(Date.UTC(2026, 0, 15, 9, 0)));
+    const brief = buildDailyBrief(report, bodyName);
+    for (const list of [brief.strengths, brief.cautions]) {
+      const sources = list.map((i) => i.source);
+      expect(new Set(sources).size).toBe(sources.length);
+    }
+  });
+
+  it('aynı metni iki kez göstermez', () => {
+    // Aynı natal noktaya iki farklı gezegenden uyumlu açı gelirse madde
+    // metinleri birebir aynı çıkıyordu; yalnızca başlık değişiyordu.
+    const report: TransitReport = {
+      date: new Date(),
+      transitPositions: [],
+      aspects: [
+        aspect({ type: 'sextile', transitBody: 'venus', natalBody: 'uranus', transitHouse: 3 }),
+        aspect({ type: 'sextile', transitBody: 'moon', natalBody: 'uranus', transitHouse: 3 }),
+        aspect({ type: 'trine', transitBody: 'chiron', natalBody: 'asc', transitHouse: 9 }),
+      ],
+      moonPhase: { angle: 0, illumination: 0.1, name: 'Yeni Ay', sign: 0 },
+      retrogrades: [],
+    };
+    const brief = buildDailyBrief(report, bodyName);
+    const texts = brief.strengths.map((i) => i.text);
+    expect(new Set(texts).size).toBe(texts.length);
+    // Uranüs'e iki açı var ama yalnızca biri listeye giriyor
+    expect(brief.strengths).toHaveLength(2);
+  });
+
+  it('birden çok gün boyunca hiçbir özet kendini tekrar etmez', () => {
+    for (let i = 0; i < 40; i++) {
+      const report = computeTransits(NATAL, new Date(Date.UTC(2026, 0, 1 + i * 9, 12, 0)));
+      const brief = buildDailyBrief(report, bodyName);
+      for (const list of [brief.strengths, brief.cautions]) {
+        const texts = list.map((x) => x.text);
+        expect(new Set(texts).size, `gün ${i}: ${texts.join(' | ')}`).toBe(texts.length);
+      }
+    }
+  });
+
+  it('açı yoksa enerji nötr, metin yedek cümleye düşer', () => {
+    const empty: TransitReport = {
+      date: new Date(),
+      transitPositions: [],
+      aspects: [],
+      moonPhase: { angle: 0, illumination: 0, name: 'Yeni Ay', sign: 0 },
+      retrogrades: [],
+    };
+    const brief = buildDailyBrief(empty, bodyName);
+    expect(brief.energy).toBe(50);
+    expect(brief.strengths).toHaveLength(0);
+    expect(brief.cautions).toHaveLength(0);
+    expect(brief.pulse).toContain('sakin');
+  });
+
+  it('yalnızca uyumlu açılar enerjiyi yükseltir, zorlayıcılar düşürür', () => {
+    const harmonious = [aspect({ type: 'trine' }), aspect({ type: 'sextile', transitBody: 'venus' })];
+    const tense = [aspect({ type: 'square' }), aspect({ type: 'opposition', transitBody: 'mars' })];
+    expect(energyLevel(harmonious)).toBeGreaterThan(80);
+    expect(energyLevel(tense)).toBeLessThan(20);
+    expect(energyLevel([...harmonious, ...tense])).toBeGreaterThan(30);
+    expect(energyLevel([...harmonious, ...tense])).toBeLessThan(70);
+  });
+
+  it('zayıf açı güçlü açıdan daha az ağırlık taşır', () => {
+    const strong = energyLevel([aspect({ type: 'trine', strength: 1 }), aspect({ type: 'square', strength: 0.1, transitBody: 'mars' })]);
+    const weak = energyLevel([aspect({ type: 'trine', strength: 0.1 }), aspect({ type: 'square', strength: 1, transitBody: 'mars' })]);
+    expect(strong).toBeGreaterThan(weak);
+  });
+
+  it('güçlü yanlar uyumlu, dikkat maddeleri zorlayıcı açılardan gelir', () => {
+    const report: TransitReport = {
+      date: new Date(),
+      transitPositions: [],
+      aspects: [
+        aspect({ type: 'trine', transitBody: 'jupiter', natalBody: 'sun', transitHouse: 10 }),
+        aspect({ type: 'square', transitBody: 'saturn', natalBody: 'moon', transitHouse: 4 }),
+      ],
+      moonPhase: { angle: 90, illumination: 0.5, name: 'İlk Dördün', sign: 3 },
+      retrogrades: [],
+    };
+    const brief = buildDailyBrief(report, bodyName);
+    expect(brief.strengths[0].source).toContain('Jüpiter');
+    expect(brief.strengths[0].text).toContain('destek alıyor');
+    expect(brief.strengths[0].text).toContain('10. ev');
+    expect(brief.cautions[0].source).toContain('Satürn');
+    expect(brief.cautions[0].text).toContain('zorlanabilir');
+    expect(brief.cautions[0].text).toContain('4. ev');
+  });
+});

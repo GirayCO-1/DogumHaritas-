@@ -44,9 +44,19 @@ His olarak Astromatik + Headspace + Meditasyon karışımı.
   üç temel kutucukları, "Bugün neyi merak ediyorsun?" yorum daveti
 - Çark açık zeminde okunaklı: gezegen renkleri palete göre, ASC/DSC etiketleri kırpılmıyor
 
+- **Anasayfa sekmesi** (ilk sırada): "Bugün" ve "Haritam" bölümleri
+  - Bugün: kozmik nabız (günün cümlesi), enerji seviyesi, güçlü yanlar,
+    dikkat edilecekler — hepsi `src/astro/daily.ts` ile gerçek transitlerden,
+    yapay zekâ çağrısı olmadan
+  - Haritam: çark + üç temel + element dengesi + haritanın detayları
+
 ### Kalan
 - Gökyüzü, Uyum, Profiller, Yorum ekranları yeni dile taşındı ama ekran ekran
   gözden geçirilmedi
+- **Harita sekmesi ile Anasayfa → Haritam aynı içeriği gösteriyor.** Ortak
+  bileşen (`ChartView`) kullanıldığı için kod tekrarı yok, ama gezinmede
+  tekrar var: Harita sekmesi kaldırılıp 4 sekmeye inilebilir (referans
+  uygulamalar öyle). Kullanıcı kararı bekliyor.
 - Boş durumlar, yükleniyor durumları, geçiş animasyonları
 - Uygulama simgesi ve açılış ekranı hâlâ koyu temaya göre
 

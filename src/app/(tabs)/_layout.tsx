@@ -27,10 +27,17 @@ export default function TabsLayout() {
             ? { shadowColor: Colors.shadow, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: -2 }, elevation: 12 }
             : {}),
         },
-        tabBarLabelStyle: { fontSize: 11, fontFamily: FontFamily.sansSemiBold, marginTop: 2 },
+        tabBarLabelStyle: { fontSize: 10.5, fontFamily: FontFamily.sansSemiBold, marginTop: 2 },
       }}>
       <Tabs.Screen
         name="index"
+        options={{
+          title: 'Anasayfa',
+          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="chart"
         options={{
           title: 'Harita',
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'planet' : 'planet-outline'} size={size} color={color} />,
