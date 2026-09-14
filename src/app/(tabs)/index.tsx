@@ -10,11 +10,10 @@ import { formatLocal } from '@/astro/time';
 import { Button, Card, Chip, EmptyState, Row, Screen, T } from '@/components/ui';
 import { ChartView } from '@/components/ChartView';
 import { DailySky } from '@/components/DailySky';
-import { ProfileChips } from '@/components/ProfileSwitcher';
 import { FontFamily, Radius, Spacing, forEachScheme, useColors, useScheme, type Palette } from '@/constants/theme';
 import { useNatalChart, useTransits } from '@/hooks/useChart';
 import { useFormat, useLocale, useT } from '@/i18n';
-import { useActiveProfile, useAppStore } from '@/store/useAppStore';
+import { useAppStore, useSelfProfile } from '@/store/useAppStore';
 
 type Tab = 'today' | 'chart';
 
@@ -32,8 +31,8 @@ export default function HomeScreen() {
   const fmt = useFormat();
   const s = styleSets[useScheme()];
   const router = useRouter();
-  const profile = useActiveProfile();
-  const setActive = useAppStore((st) => st.setActiveProfile);
+  // Anasayfa kişiye özel: kişi seçici yok, her zaman kendi haritan
+  const profile = useSelfProfile();
   const hydrated = useAppStore((st) => st.hydrated);
   const showMinor = useAppStore((st) => st.settings.showMinorAspects);
   const chart = useNatalChart(profile);
@@ -86,8 +85,6 @@ export default function HomeScreen() {
         <T variant="display">{t.home.greeting(profile.name.split(' ')[0])}</T>
         <T variant="small">{today}</T>
       </View>
-
-      <ProfileChips selectedId={profile.id} onSelect={setActive} />
 
       <SegmentedTabs value={tab} onChange={setTab} />
 

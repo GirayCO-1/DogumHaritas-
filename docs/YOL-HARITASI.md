@@ -44,7 +44,10 @@ His olarak Astromatik + Headspace + Meditasyon karışımı.
   üç temel kutucukları, "Bugün neyi merak ediyorsun?" yorum daveti
 - Çark açık zeminde okunaklı: gezegen renkleri palete göre, ASC/DSC etiketleri kırpılmıyor
 
-- **Anasayfa sekmesi** (ilk sırada): "Bugün" ve "Haritam" bölümleri
+- **Anasayfa sekmesi** (ilk sırada): "Bugün" ve "Haritam" bölümleri.
+  Kişiye özeldir: kişi seçici yoktur, her zaman "Bu benim haritam" işaretli
+  kişiyi gösterir. Başkalarının haritasına Gökyüzü ve Uyum sekmelerinden
+  bakılır.
   - Bugün: kozmik nabız (günün cümlesi), enerji seviyesi, güçlü yanlar,
     dikkat edilecekler — hepsi `src/astro/daily.ts` ile gerçek transitlerden,
     yapay zekâ çağrısı olmadan

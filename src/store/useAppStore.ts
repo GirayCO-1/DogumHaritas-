@@ -110,7 +110,11 @@ export const useAppStore = create<AppState>()(
 
       addProfile: (p) => {
         const now = Date.now();
-        const profile: Profile = { ...p, id: makeId(), createdAt: now, updatedAt: now };
+        // Anasayfa "benim haritam" kişisini gösterir. İlk eklenen kişi
+        // neredeyse her zaman kullanıcının kendisidir; kimse işaretli
+        // değilse onu işaretliyoruz ki anasayfa boş kalmasın.
+        const noSelfYet = !get().profiles.some((x) => x.isSelf);
+        const profile: Profile = { ...p, isSelf: p.isSelf || noSelfYet, id: makeId(), createdAt: now, updatedAt: now };
         set((s) => ({
           profiles: [...s.profiles, profile],
           activeProfileId: s.activeProfileId ?? profile.id,
@@ -203,6 +207,15 @@ export function profileToBirthInput(p: Profile): BirthInput {
 
 export function useActiveProfile(): Profile | undefined {
   return useAppStore((s) => s.profiles.find((p) => p.id === s.activeProfileId) ?? s.profiles[0]);
+}
+
+/**
+ * Kullanıcının kendi haritası. Anasayfa yalnızca bunu gösterir — orada kişi
+ * seçici yoktur. Hiçbiri işaretli değilse ilk kişiye düşülür; yeni eklenen
+ * ilk kişi zaten kendiliğinden işaretleniyor.
+ */
+export function useSelfProfile(): Profile | undefined {
+  return useAppStore((s) => s.profiles.find((p) => p.isSelf) ?? s.profiles[0]);
 }
 
 /**
