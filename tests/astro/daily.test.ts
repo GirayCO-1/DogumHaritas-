@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { computeNatalChart } from '../../src/astro/chart';
 import { BODIES } from '../../src/astro/constants';
-import { buildDailyBrief, energyLevel } from '../../src/astro/daily';
+import { buildDailyBrief, dayNumber, energyLevel } from '../../src/astro/daily';
 import { computeTransits } from '../../src/astro/transits';
 import type { BodyId, TransitAspect, TransitReport } from '../../src/astro/types';
 
@@ -100,6 +100,40 @@ describe('günün özeti', () => {
     }
   });
 
+  it('aynı transit sürerken cümle günden güne değişir', () => {
+    // Yavaş bir gezegen aynı açıyı haftalarca yapabiliyor; her sabah aynı
+    // cümleyi okumamak için cümle gün numarasına göre dönüyor.
+    const seen = new Set<string>();
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(2026, 0, 10 + i, 12);
+      const report: TransitReport = {
+        date: d,
+        transitPositions: [],
+        aspects: [aspect({ type: 'square', transitBody: 'saturn', natalBody: 'sun', transitHouse: 1 })],
+        moonPhase: { angle: 0, illumination: 0.2, name: 'Yeni Ay', sign: 0 },
+        retrogrades: [],
+      };
+      seen.add(buildDailyBrief(report, bodyName).pulse);
+    }
+    expect(seen.size).toBe(3);
+  });
+
+  it('gün numarası yerel takvim gününü izler', () => {
+    expect(dayNumber(new Date(2026, 0, 10, 0, 30))).toBe(dayNumber(new Date(2026, 0, 10, 23, 30)));
+    expect(dayNumber(new Date(2026, 0, 11, 12))).toBe(dayNumber(new Date(2026, 0, 10, 12)) + 1);
+  });
+
+  it('nabzı belirleyen gezegeni bildirir', () => {
+    const report: TransitReport = {
+      date: new Date(2026, 0, 10, 12),
+      transitPositions: [],
+      aspects: [aspect({ type: 'square', transitBody: 'pluto', natalBody: 'sun', transitHouse: 1 })],
+      moonPhase: { angle: 0, illumination: 0.2, name: 'Yeni Ay', sign: 0 },
+      retrogrades: [],
+    };
+    expect(buildDailyBrief(report, bodyName).pulseBody).toBe('pluto');
+  });
+
   it('açı yoksa enerji nötr, metin yedek cümleye düşer', () => {
     const empty: TransitReport = {
       date: new Date(),
@@ -112,7 +146,7 @@ describe('günün özeti', () => {
     expect(brief.energy).toBe(50);
     expect(brief.strengths).toHaveLength(0);
     expect(brief.cautions).toHaveLength(0);
-    expect(brief.pulse).toContain('sakin');
+    expect(brief.pulseBody).toBeNull();
   });
 
   it('yalnızca uyumlu açılar enerjiyi yükseltir, zorlayıcılar düşürür', () => {

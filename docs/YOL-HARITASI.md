@@ -48,6 +48,9 @@ His olarak Astromatik + Headspace + Meditasyon karışımı.
   - Bugün: kozmik nabız (günün cümlesi), enerji seviyesi, güçlü yanlar,
     dikkat edilecekler — hepsi `src/astro/daily.ts` ile gerçek transitlerden,
     yapay zekâ çağrısı olmadan
+  - Nabız cümlesi gezegen × açı başına 3 seçenekten gün numarasına göre
+    dönüyor (108 cümle); zemin de `DailySky` ile her gün yeniden üretiliyor
+    ve günü belirleyen gezegene göre renkleniyor
   - Haritam: çark + üç temel + element dengesi + haritanın detayları
 
 ### Kalan

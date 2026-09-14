@@ -19,8 +19,14 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 export default function RootLayout() {
   const Colors = useColors();
   const hydrated = useAppStore((s) => s.hydrated);
-  // Yazı tipleri yüklenmezse sistem yazı tipine düşülür; açılış engellenmez.
-  const [fontsLoaded] = useFonts({
+  /**
+   * Yazı tipleri yüklenmeden ağaç çizilmemeli. Android her Text'i bir kez
+   * ölçüyor: özel yazı tipi henüz kayıtlı değilse yedek yazı tipinin
+   * ölçüsüyle hizalıyor, sonra daha geniş glifleri çiziyor ama yeniden
+   * hizalamıyor — tek satırlık yazıların sonu kırpılıyor ("Bugü", "Kozmik").
+   * Hata olursa da devam edilir; o durumda sistem yazı tipiyle çizilir.
+   */
+  const [fontsLoaded, fontError] = useFonts({
     Fraunces_600SemiBold,
     Fraunces_700Bold,
     PlusJakartaSans_400Regular,
@@ -45,15 +51,20 @@ export default function RootLayout() {
     };
   }, [Colors]);
 
+  const fontsReady = fontsLoaded || fontError !== null;
+
   useEffect(() => {
-    if (hydrated) SplashScreen.hideAsync().catch(() => {});
-  }, [hydrated]);
+    if (hydrated && fontsReady) SplashScreen.hideAsync().catch(() => {});
+  }, [hydrated, fontsReady]);
 
   // Depolama ya da yazı tipi okunamazsa bile açılış ekranında takılı kalma
   useEffect(() => {
     const id = setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 3000);
     return () => clearTimeout(id);
   }, []);
+
+  // Açılış ekranı görünmeye devam eder
+  if (!fontsReady) return null;
 
   return (
     <ThemeProvider value={navTheme}>

@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, Share, StyleSheet, View } from 'react-native';
@@ -10,6 +9,7 @@ import { buildDailyBrief, type BriefItem } from '@/astro/daily';
 import type { BodyId } from '@/astro/types';
 import { Button, Card, EmptyState, Row, Screen, T } from '@/components/ui';
 import { ChartView } from '@/components/ChartView';
+import { DailySky } from '@/components/DailySky';
 import { FontFamily, Radius, Spacing, forEachScheme, shadow, useColors, useScheme, type Palette } from '@/constants/theme';
 import { useNatalChart, useTransits } from '@/hooks/useChart';
 import { useActiveProfile, useAppStore } from '@/store/useAppStore';
@@ -95,29 +95,28 @@ export default function HomeScreen() {
           </Card>
         ) : (
           <>
-            {/* Kozmik nabız — günün en belirleyici transitinden türeyen tek cümle */}
-            <LinearGradient
-              colors={Colors.scheme === 'light' ? ['#E8E3F7', '#DCE9F5', '#E6E1F0'] : ['#211D46', '#152238', '#1C1838']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={s.pulseCard}>
-              <View style={s.pulseBadge}>
-                <T variant="caption" color={Colors.textSecondary}>
-                  Kozmik nabız
+            {/* Kozmik nabız — günün en belirleyici transitinden türeyen tek
+                cümle; zemin de o gezegene göre her gün değişiyor */}
+            <DailySky day={brief.day} body={brief.pulseBody}>
+              <View style={s.pulseCard}>
+                <View style={s.pulseBadge}>
+                  <T variant="caption" color={Colors.textSecondary}>
+                    Kozmik nabız
+                  </T>
+                </View>
+                <T variant="heading" style={s.pulseText}>
+                  {brief.pulse}
+                </T>
+                <Pressable onPress={share} hitSlop={8}>
+                  <T variant="small" color={Colors.textSecondary} style={s.shareLink}>
+                    Sosyal medyada paylaş
+                  </T>
+                </Pressable>
+                <T variant="caption" style={{ textAlign: 'center' }}>
+                  {brief.pulseSource}
                 </T>
               </View>
-              <T variant="heading" style={s.pulseText}>
-                {brief.pulse}
-              </T>
-              <Pressable onPress={share} hitSlop={8}>
-                <T variant="small" color={Colors.textSecondary} style={s.shareLink}>
-                  Sosyal medyada paylaş
-                </T>
-              </Pressable>
-              <T variant="caption" style={{ textAlign: 'center' }}>
-                {brief.pulseSource}
-              </T>
-            </LinearGradient>
+            </DailySky>
 
             <Card>
               <Row style={{ justifyContent: 'space-between' }}>
@@ -273,7 +272,6 @@ const styleSets = forEachScheme((c) =>
     segments: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border },
     segment: { paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: 'transparent' },
     pulseCard: {
-      borderRadius: Radius.lg,
       paddingVertical: Spacing.four,
       paddingHorizontal: Spacing.three,
       alignItems: 'center',
