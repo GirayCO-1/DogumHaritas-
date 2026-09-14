@@ -97,14 +97,21 @@ Ayarlar → Yapay Zekâ Yorumu:
 
 Kullanıcıların hiçbir ayar yapmadan yorum alması ve faturanın sana gelmesi için:
 
-```bash
-cd server && npm install
-npx wrangler login
-npx wrangler secret put ANTHROPIC_API_KEY   # anahtar YALNIZCA burada
-npm run deploy                              # → https://...workers.dev
-cd ..
-cp .env.example .env                        # EXPO_PUBLIC_AI_PROXY_URL'i doldur
+Komutları **tek tek** çalıştır (Windows PowerShell 5.1 `&&` desteklemez):
+
 ```
+cd server
+npm install
+npx wrangler login
+npx wrangler secret put ANTHROPIC_API_KEY
+npm run deploy
+cd ..
+cp .env.example .env
+```
+
+`wrangler secret put` anahtarı **parametre olarak almaz** — komutu çalıştırınca sorar, anahtarı o istemde yapıştır. Komut satırına yazarsan kabuk geçmişine düz metin olarak kaydedilir.
+
+`npm run deploy` sana `https://....workers.dev` adresini verir; `.env` içindeki `EXPO_PUBLIC_AI_PROXY_URL` değerini `https://....workers.dev/interpret` yap (sondaki `/interpret` şart).
 
 `.env` dolduğunda uygulama kutudan çıktığı gibi vekili kullanır; Ayarlar'da "Uygulama sunucusu kullanılıyor" yazar ve anahtar kutusu hiç görünmez.
 
