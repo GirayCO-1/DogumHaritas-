@@ -4,10 +4,9 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, Share, StyleSheet, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
-import { THEMES, THEME_ORDER, type InterpretationTheme } from '@/ai/prompts';
 import { buildDailyBrief, type BriefItem } from '@/astro/daily';
 import { formatLocal } from '@/astro/time';
-import { Button, Card, Chip, EmptyState, Row, Screen, T } from '@/components/ui';
+import { Button, Card, EmptyState, Row, Screen, T } from '@/components/ui';
 import { ChartView } from '@/components/ChartView';
 import { DailySky } from '@/components/DailySky';
 import { FontFamily, Radius, Spacing, forEachScheme, useColors, useScheme, type Palette } from '@/constants/theme';
@@ -37,7 +36,6 @@ export default function HomeScreen() {
   const showMinor = useAppStore((st) => st.settings.showMinorAspects);
   const chart = useNatalChart(profile);
   const [tab, setTab] = useState<Tab>('today');
-  const [theme, setTheme] = useState<InterpretationTheme>('general');
 
   // Sekmeye her dönüşte gün tazelenir; gün değişmediyse özet aynı kalır.
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -156,31 +154,6 @@ export default function HomeScreen() {
           </T>
 
           <ChartView chart={chart} profile={profile} showMinor={showMinor} />
-
-          {/* Yorum daveti — sorulan bir soru gibi, dolu bir kutu gibi değil */}
-          <Card tone="primary" flat style={{ gap: Spacing.three }}>
-            <View style={{ gap: 2 }}>
-              <T variant="heading">{t.chart.interpretQuestion}</T>
-              <T variant="small">{t.theme[theme].tagline}</T>
-            </View>
-            <Row gap={Spacing.two} style={{ flexWrap: 'wrap' }}>
-              {THEME_ORDER.map((k) => (
-                <Chip
-                  key={k}
-                  label={t.theme[k].name}
-                  icon={THEMES[k].icon as never}
-                  active={theme === k}
-                  onPress={() => setTheme(k)}
-                  style={theme === k ? undefined : s.themeChip}
-                />
-              ))}
-            </Row>
-            <Button
-              title={t.chart.interpretCta}
-              icon="sparkles"
-              onPress={() => router.push({ pathname: '/interpret', params: { kind: 'natal', a: profile.id, theme } })}
-            />
-          </Card>
         </>
       )}
     </Screen>
@@ -303,7 +276,5 @@ const styleSets = forEachScheme((c) =>
     pulseText: { textAlign: 'center', fontFamily: FontFamily.display, fontSize: 19, lineHeight: 29 },
     shareLink: { textDecorationLine: 'underline' },
     dot: { width: 7, height: 7, borderRadius: 4, marginTop: 7 },
-    // Davet kartının zemini zaten tonlu; etkin olmayan çipler beyaz kalsın
-    themeChip: { backgroundColor: c.card },
   }),
 );
