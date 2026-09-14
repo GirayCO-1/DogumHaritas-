@@ -9,7 +9,7 @@ import { formatLocal } from '@/astro/time';
 import { Button, Card, EmptyState, Row, Screen, T } from '@/components/ui';
 import { ChartView } from '@/components/ChartView';
 import { DailySky } from '@/components/DailySky';
-import { FontFamily, Radius, Spacing, forEachScheme, useColors, useScheme, type Palette } from '@/constants/theme';
+import { FontFamily, Radius, Spacing, forEachScheme, shadow, useColors, useScheme, type Palette } from '@/constants/theme';
 import { useNatalChart, useTransits } from '@/hooks/useChart';
 import { useFormat, useLocale, useT } from '@/i18n';
 import { useAppStore, useSelfProfile } from '@/store/useAppStore';
@@ -154,6 +154,22 @@ export default function HomeScreen() {
           </T>
 
           <ChartView chart={chart} profile={profile} showMinor={showMinor} />
+
+          {/* Doğum haritası yorumu. Gökyüzü'ndeki günlük yorum kartıyla
+              karışmasın diye bilerek farklı biçimde: seçenek kutusu değil,
+              açılacak bir kayıt gibi duruyor. Tema seçimi yorum ekranında. */}
+          <Pressable
+            onPress={() => router.push({ pathname: '/interpret', params: { kind: 'natal', a: profile.id } })}
+            style={({ pressed }) => [s.reading, pressed && { opacity: 0.75 }]}>
+            <View style={s.readingIcon}>
+              <Ionicons name="sparkles" size={20} color={Colors.primary} />
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <T variant="subheading">{t.chart.readingTitle}</T>
+              <T variant="small">{t.chart.readingSubtitle}</T>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Colors.muted} />
+          </Pressable>
         </>
       )}
     </Screen>
@@ -276,5 +292,24 @@ const styleSets = forEachScheme((c) =>
     pulseText: { textAlign: 'center', fontFamily: FontFamily.display, fontSize: 19, lineHeight: 29 },
     shareLink: { textDecorationLine: 'underline' },
     dot: { width: 7, height: 7, borderRadius: 4, marginTop: 7 },
+    reading: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.three,
+      backgroundColor: c.card,
+      borderRadius: Radius.lg,
+      padding: Spacing.three,
+      ...(c.scheme === 'light'
+        ? shadow(c, 1)
+        : { borderWidth: StyleSheet.hairlineWidth, borderColor: c.border }),
+    },
+    readingIcon: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.primarySoft,
+    },
   }),
 );

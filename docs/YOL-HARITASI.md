@@ -55,7 +55,9 @@ His olarak Astromatik + Headspace + Meditasyon karışımı.
     dönüyor (108 cümle); zemin de `DailySky` ile her gün yeniden üretiliyor
     ve günü belirleyen gezegene göre renkleniyor
   - Haritam: doğum bilgisi, çark, üç temel, element dengesi, haritanın
-    detayları ve tema seçimli natal yorum
+    detayları ve doğum haritası yorumuna giriş. Tema (odak) seçimi yorum
+    ekranının içinde; Gökyüzü'ndeki günlük yorum kartıyla karışmasın diye
+    giriş bilerek farklı biçimde.
   - Sekme çubuğu dört sekme: Anasayfa · Gökyüzü · Uyum · Profiller. Ayrı
     Harita sekmesi Anasayfa → Haritam ile aynı içeriği gösterdiği için
     kaldırıldı.

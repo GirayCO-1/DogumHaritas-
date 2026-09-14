@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 
 import { AiError, interpret } from '@/ai/claude';
 import {
   THEMES,
+  THEME_ORDER,
   interpretationKey,
   serializeChart,
   serializeSynastry,
@@ -17,10 +18,10 @@ import {
 import { computeSynastry } from '@/astro/synastry';
 import { computeTransits } from '@/astro/transits';
 import { Markdown } from '@/components/Markdown';
-import { Button, Card, Row, Screen, T } from '@/components/ui';
-import { useColors } from '@/constants/theme';
+import { Button, Card, Chip, Row, Screen, T } from '@/components/ui';
+import { Spacing, useColors } from '@/constants/theme';
 import { useNatalChart } from '@/hooks/useChart';
-import { useLocale, useT, type Messages } from '@/i18n';
+import { useFormat, useLocale, useT, type Messages } from '@/i18n';
 import { useAppStore } from '@/store/useAppStore';
 
 function titleFor(t: Messages, kind: InterpretationKind): string {
@@ -46,10 +47,14 @@ export default function InterpretScreen() {
   const Colors = useColors();
   const t = useT();
   const locale = useLocale();
+  const fmt = useFormat();
   const params = useLocalSearchParams<{ kind?: string; a?: string; b?: string; offset?: string; date?: string; theme?: string }>();
   const router = useRouter();
   const kind = (['natal', 'daily', 'forecast', 'synastry'].includes(params.kind ?? '') ? params.kind : 'natal') as InterpretationKind;
-  const theme = (params.theme && params.theme in THEMES ? params.theme : 'general') as InterpretationTheme;
+  // Tema artık ekranda değiştirilebiliyor; parametre yalnızca başlangıç değeri
+  const [theme, setTheme] = useState<InterpretationTheme>(
+    (params.theme && params.theme in THEMES ? params.theme : 'general') as InterpretationTheme,
+  );
   const profiles = useAppStore((s) => s.profiles);
   const settings = useAppStore((s) => s.settings);
   const interpretations = useAppStore((s) => s.interpretations);
@@ -73,12 +78,12 @@ export default function InterpretScreen() {
       const day = params.date ? parseIsoDay(params.date, now) : parseIsoDay(undefined, now + offsetDays * 86400000);
       const report = computeTransits(chartA, day);
       // Öngörüde modele tarihin bugünden ne kadar uzak olduğu da söylenir
-      const data = `${serializeChart(chartA, 'Natal harita')}\n\n${serializeTransits(report, chartA, kind === 'forecast' ? new Date(now) : undefined)}`;
+      const data = `${serializeChart(chartA, 'Natal chart')}\n\n${serializeTransits(report, chartA, kind === 'forecast' ? new Date(now) : undefined)}`;
       return { data, key: interpretationKey(kind, [params.a ?? '', toIsoDay(day), theme, locale], data) };
     }
     if (!chartB) return null;
     const rep = computeSynastry(chartA, chartB);
-    const data = `${serializeChart(chartA, `Kişi A`)}\n\n${serializeChart(chartB, `Kişi B`)}\n\n${serializeSynastry(chartA, chartB, rep)}`;
+    const data = `${serializeChart(chartA, 'Person A')}\n\n${serializeChart(chartB, 'Person B')}\n\n${serializeSynastry(chartA, chartB, rep)}`;
     return { data, key: interpretationKey('synastry', [params.a ?? '', params.b ?? '', theme, locale], data) };
   }, [chartA, chartB, kind, params.a, params.b, params.date, offsetDays, now, theme, locale]);
 
@@ -101,9 +106,17 @@ export default function InterpretScreen() {
     }
   }, [payload, settings, kind, theme, locale, setInterpretation]);
 
-  // Yorum yoksa ve AI açıksa otomatik başlat
+  /**
+   * Ekran ilk açıldığında yorum kendiliğinden başlar. Sonradan tema
+   * değiştirilirse başlamaz: her yorum bir istek (ve ileride bir satın alma)
+   * demek, altı temaya dokunmak altı istek olmamalı. Yeni temada önbellek
+   * yoksa kullanıcı düğmeye basarak başlatır.
+   */
+  const autoStarted = useRef(false);
   useEffect(() => {
     if (!payload || cached || settings.aiMode === 'off' || loading || error) return;
+    if (autoStarted.current) return;
+    autoStarted.current = true;
     const id = setTimeout(run, 0);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -117,9 +130,10 @@ export default function InterpretScreen() {
   };
 
   const themeLabel = theme === 'general' ? '' : ` · ${t.theme[theme].name}`;
+  const needsRun = !cached && !loading && !error && settings.aiMode !== 'off';
   const dayLabel =
     kind === 'forecast' && params.date
-      ? ` · ${parseIsoDay(params.date, now).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}`
+      ? ` · ${fmt.date(parseIsoDay(params.date, now), { day: 'numeric', month: 'long', year: 'numeric' })}`
       : kind === 'daily'
         ? ` · ${offsetDays === 0 ? t.common.today : offsetDays === 1 ? t.common.tomorrow : offsetDays === -1 ? t.common.yesterday : t.sky.dayOffset(offsetDays > 0 ? '+' : '−', Math.abs(offsetDays))}`
         : '';
@@ -133,6 +147,24 @@ export default function InterpretScreen() {
       <Stack.Screen options={{ title: titleFor(t, kind) }} />
       <Screen edges={['bottom']}>
         <T variant="small">{subtitle}</T>
+
+        {/* Odak seçimi: Anasayfa'dan taşındı, yorumun yanında duruyor */}
+        {payload && (
+          <Card>
+            <T variant="label">{t.interpret.focus}</T>
+            <Row gap={Spacing.two} style={{ flexWrap: 'wrap' }}>
+              {THEME_ORDER.map((k) => (
+                <Chip key={k} label={t.theme[k].name} icon={THEMES[k].icon as never} active={theme === k} onPress={() => setTheme(k)} />
+              ))}
+            </Row>
+            <T variant="small">{t.theme[theme].tagline}</T>
+            {needsRun ? (
+              <Button title={t.interpret.generate} icon="sparkles" onPress={run} />
+            ) : (
+              <T variant="caption">{t.interpret.focusHint}</T>
+            )}
+          </Card>
+        )}
 
         {!payload && (
           <Card>
