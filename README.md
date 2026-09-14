@@ -73,7 +73,8 @@ src/
 ├── ai/             Claude istemcisi, istemler, güvenli anahtar saklama
 ├── store/          zustand + AsyncStorage (profiller, ayarlar, yorum önbelleği)
 └── data/           cities.json + arama
-server/             İsteğe bağlı Cloudflare Worker vekili (API anahtarını sunucuda tutar)
+server/             Cloudflare Worker vekili (API anahtarını sunucuda tutar)
+supabase/           Aynı vekilin Supabase Edge Function sürümü (biri yeterli)
 tests/              vitest
 scripts/            veri üretim betikleri
 ```
@@ -95,23 +96,25 @@ Ayarlar → Yapay Zekâ Yorumu:
 
 ### Tüm kullanıcılara tek anahtarla yorum (dağıtım)
 
-Kullanıcıların hiçbir ayar yapmadan yorum alması ve faturanın sana gelmesi için:
+Kullanıcıların hiçbir ayar yapmadan yorum alması ve faturanın sana gelmesi için bir vekil sunucu yayımla. **İki seçenek var, birini seç** — ikisi aynı işi yapar:
 
-Komutları **tek tek** çalıştır (Windows PowerShell 5.1 `&&` desteklemez):
+| Seçenek | Ne zaman | Kurulum |
+|---|---|---|
+| **Supabase Edge Function** | Zaten Supabase kullanıyorsan (ek servis yok) | [`supabase/README.md`](supabase/README.md) |
+| **Cloudflare Worker** | Supabase yoksa | [`server/README.md`](server/README.md) |
+
+Her iki durumda da adresi proje kökündeki `.env` dosyasına yaz:
 
 ```
-cd server
-npm install
-npx wrangler login
-npx wrangler secret put ANTHROPIC_API_KEY
-npm run deploy
-cd ..
 cp .env.example .env
 ```
 
-`wrangler secret put` anahtarı **parametre olarak almaz** — komutu çalıştırınca sorar, anahtarı o istemde yapıştır. Komut satırına yazarsan kabuk geçmişine düz metin olarak kaydedilir.
-
-`npm run deploy` sana `https://....workers.dev` adresini verir; `.env` içindeki `EXPO_PUBLIC_AI_PROXY_URL` değerini `https://....workers.dev/interpret` yap (sondaki `/interpret` şart).
+```
+# Supabase kullandıysan
+EXPO_PUBLIC_AI_PROXY_URL=https://<PROJE_REF>.supabase.co/functions/v1/interpret
+# Cloudflare kullandıysan
+EXPO_PUBLIC_AI_PROXY_URL=https://<ad>.workers.dev/interpret
+```
 
 `.env` dolduğunda uygulama kutudan çıktığı gibi vekili kullanır; Ayarlar'da "Uygulama sunucusu kullanılıyor" yazar ve anahtar kutusu hiç görünmez.
 

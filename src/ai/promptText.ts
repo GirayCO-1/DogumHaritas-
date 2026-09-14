@@ -2,7 +2,7 @@
  * Claude istemleri — saf metin, bağımlılıksız. Hem uygulama (src/ai/prompts.ts)
  * hem de sunucu vekili (server/) bu dosyayı kullanır.
  */
-import { buildStyleSection } from './houseStyle';
+import { buildStyleSection } from './houseStyle.ts';
 
 export type InterpretationKind = 'natal' | 'daily' | 'synastry';
 
