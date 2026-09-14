@@ -10,7 +10,7 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import type { BodyId, NatalChart } from '@/astro/types';
 import { MaxContentWidth, Radius, Spacing, forEachScheme, useColors, useScheme } from '@/constants/theme';
-import { useAstro, useT, type Messages } from '@/i18n';
+import { useT, type Messages } from '@/i18n';
 import type { Profile } from '@/store/useAppStore';
 
 import { ChartWheel } from './ChartWheel';
@@ -39,7 +39,6 @@ export function ChartView({
 }) {
   const Colors = useColors();
   const t = useT();
-  const astro = useAstro();
   const s = styleSets[useScheme()];
   const { width } = useWindowDimensions();
   const [selected, setSelected] = useState<BodyId | null>(null);
@@ -56,8 +55,6 @@ export function ChartView({
         <ChartWheel chart={chart} size={wheelSize} showAspects={showAspects} showMinor={showMinor} selected={selected} onSelect={setSelected} />
         <Row gap={Spacing.two} style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
           <Chip label={t.chart.aspects} icon="git-network-outline" active={showAspects} onPress={() => setShowAspects((v) => !v)} />
-          {/* Bilgi etiketi, kısayol değil: ev sistemi Ayarlar'dan değişir */}
-          <Chip label={astro.houseSystems[chart.houses.system]} icon="grid-outline" />
           {chart.houses.fallbackFrom && <Chip label={t.chart.polarFallback} color={Colors.warning} active />}
           {profile.timeUnknown && <Chip label={t.chart.timeUnknown} color={Colors.warning} active />}
         </Row>

@@ -99,7 +99,7 @@ export function BodyDetail({ chart, id }: { chart: NatalChart; id: BodyId }) {
           </T>
           <T variant="small">
             {t.chart.houseN(p.house)} · {astro.houses[p.house - 1]}
-            {BODIES[id].physical ? ` · ${formatSpeed(p.speed)}${p.retrograde ? ` (${t.chart.retro})` : ''}` : ''}
+            {BODIES[id].physical ? ` · ${formatSpeed(p.speed, astro.speedUnit)}${p.retrograde ? ` (${t.chart.retro})` : ''}` : ''}
           </T>
         </View>
       </Row>

@@ -26,6 +26,8 @@ export interface AstroText {
   moonPhases: readonly string[];
   /** Sinastri alt skorları */
   synastryCategories: Record<'love' | 'communication' | 'harmony' | 'passion' | 'stability', string>;
+  /** Günlük hız birimi: "°/gün", "°/day" … */
+  speedUnit: string;
 }
 
 const tr: AstroText = {
@@ -61,6 +63,7 @@ const tr: AstroText = {
   },
   moonPhases: ['Yeni Ay', 'Hilal (Büyüyen)', 'İlk Dördün', 'Şişkin Ay (Büyüyen)', 'Dolunay', 'Şişkin Ay (Küçülen)', 'Son Dördün', 'Hilal (Küçülen)'],
   synastryCategories: { love: 'Aşk & Romantizm', communication: 'İletişim', harmony: 'Duygusal Uyum', passion: 'Tutku & Çekim', stability: 'Kalıcılık & Güven' },
+  speedUnit: '°/gün',
   houseSystems: {
     placidus: 'Placidus', koch: 'Koch', whole: 'Tam Burç (Whole Sign)', equal: 'Eşit Ev',
     porphyry: 'Porphyry', campanus: 'Campanus', regiomontanus: 'Regiomontanus',
@@ -100,6 +103,7 @@ const en: AstroText = {
   },
   moonPhases: ['New Moon', 'Waxing Crescent', 'First Quarter', 'Waxing Gibbous', 'Full Moon', 'Waning Gibbous', 'Last Quarter', 'Waning Crescent'],
   synastryCategories: { love: 'Love & Romance', communication: 'Communication', harmony: 'Emotional Harmony', passion: 'Passion & Attraction', stability: 'Stability & Trust' },
+  speedUnit: '°/day',
   houseSystems: {
     placidus: 'Placidus', koch: 'Koch', whole: 'Whole Sign', equal: 'Equal House',
     porphyry: 'Porphyry', campanus: 'Campanus', regiomontanus: 'Regiomontanus',
@@ -139,6 +143,7 @@ const de: AstroText = {
   },
   moonPhases: ['Neumond', 'Zunehmende Sichel', 'Erstes Viertel', 'Zunehmender Mond', 'Vollmond', 'Abnehmender Mond', 'Letztes Viertel', 'Abnehmende Sichel'],
   synastryCategories: { love: 'Liebe & Romantik', communication: 'Kommunikation', harmony: 'Emotionale Harmonie', passion: 'Leidenschaft & Anziehung', stability: 'Beständigkeit & Vertrauen' },
+  speedUnit: '°/Tag',
   houseSystems: {
     placidus: 'Placidus', koch: 'Koch', whole: 'Ganzzeichen', equal: 'Gleiche Häuser',
     porphyry: 'Porphyrius', campanus: 'Campanus', regiomontanus: 'Regiomontanus',
@@ -178,6 +183,7 @@ const fr: AstroText = {
   },
   moonPhases: ['Nouvelle Lune', 'Premier croissant', 'Premier quartier', 'Lune gibbeuse croissante', 'Pleine Lune', 'Lune gibbeuse décroissante', 'Dernier quartier', 'Dernier croissant'],
   synastryCategories: { love: 'Amour & romance', communication: 'Communication', harmony: 'Harmonie émotionnelle', passion: 'Passion & attirance', stability: 'Stabilité & confiance' },
+  speedUnit: '°/jour',
   houseSystems: {
     placidus: 'Placidus', koch: 'Koch', whole: 'Signes entiers', equal: 'Maisons égales',
     porphyry: 'Porphyre', campanus: 'Campanus', regiomontanus: 'Regiomontanus',
@@ -217,6 +223,7 @@ const ar: AstroText = {
   },
   moonPhases: ['محاق', 'هلال متزايد', 'التربيع الأول', 'أحدب متزايد', 'بدر', 'أحدب متناقص', 'التربيع الأخير', 'هلال متناقص'],
   synastryCategories: { love: 'الحب والرومانسية', communication: 'التواصل', harmony: 'الانسجام العاطفي', passion: 'الشغف والانجذاب', stability: 'الثبات والثقة' },
+  speedUnit: '°/يوم',
   houseSystems: {
     placidus: 'بلاسيدوس', koch: 'كوخ', whole: 'البروج الكاملة', equal: 'البيوت المتساوية',
     porphyry: 'فرفوريوس', campanus: 'كامبانوس', regiomontanus: 'ريجيومونتانوس',

@@ -1,6 +1,11 @@
-import { ASPECTS, BODIES, SIGNS } from './constants';
+/**
+ * Sayısal biçimlendirme — dile bağımsız.
+ *
+ * Burç, gezegen ve açı ADLARI burada değil `src/astro/i18n.ts` içindedir;
+ * bu modül yalnızca derece/dakika gibi dilden bağımsız biçimleri üretir.
+ * Tek dile bağlı şey günlük hız birimi, o da parametre olarak gelir.
+ */
 import { splitDegrees, zodiacPosition } from './math';
-import type { Aspect, BodyId, BodyPosition } from './types';
 
 const pad2 = (n: number) => n.toString().padStart(2, '0');
 
@@ -8,18 +13,6 @@ const pad2 = (n: number) => n.toString().padStart(2, '0');
 export function formatDegMin(longitude: number, withSeconds = false): string {
   const z = zodiacPosition(longitude);
   return withSeconds ? `${z.deg}°${pad2(z.min)}'${pad2(z.sec)}"` : `${z.deg}°${pad2(z.min)}'`;
-}
-
-/** "15°32' Koç" */
-export function formatZodiac(longitude: number, withSeconds = false): string {
-  const z = zodiacPosition(longitude);
-  return `${formatDegMin(longitude, withSeconds)} ${SIGNS[z.sign].name}`;
-}
-
-/** "15° Koç 32'" tarzı kısa; sembolle: "15°♈32'" */
-export function formatZodiacSymbol(longitude: number): string {
-  const z = zodiacPosition(longitude);
-  return `${z.deg}°${SIGNS[z.sign].symbol}${pad2(z.min)}'`;
 }
 
 /** Mutlak boylam: 123°45'12" */
@@ -35,32 +28,11 @@ export function formatSigned(value: number): string {
   return `${s}${deg}°${pad2(min)}'`;
 }
 
-export function signName(sign: number): string {
-  return SIGNS[((sign % 12) + 12) % 12].name;
-}
-
-export function bodyName(id: BodyId): string {
-  return BODIES[id].name;
-}
-
-export function bodySymbol(id: BodyId): string {
-  return BODIES[id].symbol;
-}
-
-export function formatBody(p: BodyPosition): string {
-  const retro = p.retrograde ? ' ℞' : '';
-  return `${BODIES[p.id].name}: ${formatZodiac(p.longitude)}${retro} (${p.house}. ev)`;
-}
-
-export function formatAspect(a: Aspect): string {
-  const info = ASPECTS[a.type];
-  const orb = `${Math.abs(a.orb).toFixed(1)}°`;
-  const phase = a.applying ? 'yaklaşan' : 'uzaklaşan';
-  return `${BODIES[a.a].name} ${info.symbol} ${BODIES[a.b].name} — ${info.name} (orb ${orb}, ${phase})`;
-}
-
-/** Hız: +1.23°/gün */
-export function formatSpeed(speed: number): string {
+/**
+ * Günlük hız: "+14.01°/gün", "−0.04°/day".
+ * Birim dile göre değişir; çağıran `astroText(locale).speedUnit` verir.
+ */
+export function formatSpeed(speed: number, unit: string): string {
   const s = speed < 0 ? '−' : '+';
-  return `${s}${Math.abs(speed).toFixed(2)}°/gün`;
+  return `${s}${Math.abs(speed).toFixed(2)}${unit}`;
 }
