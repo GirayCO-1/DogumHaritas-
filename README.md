@@ -38,6 +38,24 @@ Terminalde çıkan QR kodu **Android'de Expo Go uygulamasından**, **iPhone'da K
 
 Tüm özellikler Expo Go'da çalışır (SVG çark, şehir arama, transitler, sinastri, Claude yorumu). `expo-secure-store` Expo Go'da da desteklenir; mağaza sürümü için yine de bir **development build** (`npx expo run:android`) ya da EAS derlemesi önerilir.
 
+### Yeni sürümü çekmek
+
+Expo Go eski sürümü gösteriyorsa neredeyse her zaman sebebi **yeni bağımlılıkların kurulmamış olmasıdır**. Sunucuyu `Ctrl+C` ile durdur, sonra sırayla (PowerShell'de `&&` çalışmaz, her satırı ayrı çalıştır):
+
+```powershell
+git fetch origin
+git checkout claude/birth-chart-viewer-app-vn294e
+git pull origin claude/birth-chart-viewer-app-vn294e
+npm install
+npx expo start --tunnel --clear
+```
+
+`npm install` atlanırsa Metro `Unable to resolve module ...` hatası verir ya da eski paket dosyası kullanılmaya devam eder.
+
+Telefonda: Expo Go'yu **tamamen kapat** (arka plandan kaydırarak at), yeniden aç ve yeni QR kodu okut. Sadece "Reload" demek bağımlılık değiştiğinde yetmez.
+
+Doğru sürümde olduğunu şuradan anlarsın: alt sekme çubuğunda **Anasayfa** ilk sırada görünür ve uygulama açık (beyaz) temayla açılır.
+
 ### Komutlar
 
 | Komut | Açıklama |
