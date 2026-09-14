@@ -12,25 +12,49 @@ Uygulama tarafında hiçbir fark yok: `.env` içindeki `EXPO_PUBLIC_AI_PROXY_URL
 
 ## Kurulum
 
-Komutları **tek tek** çalıştır (Windows PowerShell `&&` desteklemez):
+### 1. Anahtarı gizli değişken olarak ekle (panelden, CLI gerekmez)
+
+Supabase paneli → **Edge Functions → Secrets → Add new secret**
+
+| Name | Value |
+|---|---|
+| `ANTHROPIC_API_KEY` | `sk-ant-...` |
+
+Anahtar yalnızca burada durur; uygulamaya ya da repoya hiç inmez.
+
+### 2. Fonksiyonu yayımla
+
+Panelden yayımlanmış bir fonksiyon zaten varsa bu adımı atla. CLI ile:
 
 ```
 npm install -g supabase
 supabase login
 supabase link --project-ref <PROJE_REF>
-supabase secrets set ANTHROPIC_API_KEY
-supabase functions deploy interpret --no-verify-jwt
+npm run deploy:supabase
 ```
 
-- **`<PROJE_REF>`** — Supabase panelinde **Project Settings → General → Reference ID**.
-- **`supabase secrets set ANTHROPIC_API_KEY`** anahtarı **sorar**; komut satırına yazma, kabuk geçmişine düz metin kaydolur.
+- **`<PROJE_REF>`** — panelde **Project Settings → General → Reference ID**.
+- `npm run deploy:supabase` önce `src/ai/` içindeki istemleri `_shared/` altına tazeler, sonra `--no-verify-jwt` ile dağıtır.
 - **`--no-verify-jwt`** gerekir: uygulama Supabase kimlik doğrulaması kullanmıyor. Uç nokta bunun yerine aşağıdaki önlemlerle korunur.
 
-Dağıtım sonunda adresin şu olur:
+### 3. Adresi `.env`'e yaz
 
 ```
 https://<PROJE_REF>.supabase.co/functions/v1/interpret
 ```
+
+### 4. Çalıştığını doğrula
+
+```
+curl -X POST https://<PROJE_REF>.supabase.co/functions/v1/interpret -H "Content-Type: application/json" -d "{\"kind\":\"natal\",\"effort\":\"low\",\"data\":\"# Harita\n- Gunes: 24 Ikizler, 9. ev\n- Ay: 15 Balik, 5. ev\n- Yukselen: 8 Terazi\"}"
+```
+
+| Yanıt | Anlamı |
+|---|---|
+| `{"text":"## Genel Bakış...` | Her şey çalışıyor |
+| `{"error":"Sunucuda ANTHROPIC_API_KEY tanımlı değil"}` | 1. adım eksik |
+| `{"error":"Sunucu anahtarı geçersiz"}` | Anahtar yanlış ya da silinmiş |
+| `BOOT_ERROR` | Fonksiyon başlayamadı — panelde **Edge Functions → interpret → Logs** |
 
 Bunu proje kökündeki `.env` dosyasına yaz:
 
@@ -56,15 +80,19 @@ Uç nokta herkese açık olduğu için üç katman var:
 supabase functions serve interpret --no-verify-jwt
 ```
 
-Başka bir terminalde:
+## İstem kaynağı ve `_shared/`
+
+Tek kaynak **`src/ai/promptText.ts` + `src/ai/houseStyle.ts`**; uygulama, Cloudflare Worker ve bu fonksiyon aynı metni paylaşır.
+
+Supabase yalnızca `supabase/functions/` altındaki dosyaları paketlediği için bu iki dosyanın kopyası `_shared/` altında tutulur. Kopyalar **üretilir, elle düzenlenmez**:
 
 ```
-curl -X POST http://localhost:54321/functions/v1/interpret -H "Content-Type: application/json" -d "{\"kind\":\"natal\",\"effort\":\"low\",\"data\":\"# Doğum Haritası\n## Gezegenler\n- Güneş: 24°06' İkizler, 9. ev\n- Ay: 15°04' Balık, 5. ev\n- Yükselen: 8°30' Terazi\"}"
+npm run sync:shared
 ```
 
-## İstem kaynağı
+`npm run deploy:supabase` bunu zaten kendisi çalıştırır. Kopyalar eskirse `npm test` kırılır, yani sürüklenme fark edilmeden geçemez.
 
-Sistem istemi ve kullanıcı istemi `../../src/ai/promptText.ts` dosyasından gelir — uygulama, Cloudflare Worker ve bu fonksiyon **aynı metni** paylaşır. Yorumların üslubunu değiştirmek için `src/ai/houseStyle.ts` dosyasını düzenle, sonra fonksiyonu yeniden dağıt.
+Yorumların üslubunu değiştirmek için `src/ai/houseStyle.ts` dosyasını düzenle, sonra yeniden dağıt.
 
 ## Ortam değişkenleri
 

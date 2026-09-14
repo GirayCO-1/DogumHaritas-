@@ -14,11 +14,11 @@
  *
  * Kurulum:
  *   supabase secrets set ANTHROPIC_API_KEY        (değeri sorar)
- *   supabase functions deploy interpret --no-verify-jwt
+ *   npm run deploy:supabase                       (önce _shared'ı tazeler)
  */
 import Anthropic from 'npm:@anthropic-ai/sdk@^0.125.0';
 
-import { SYSTEM_PROMPT, buildUserPrompt, type InterpretationKind } from '../../../src/ai/promptText.ts';
+import { SYSTEM_PROMPT, buildUserPrompt, type InterpretationKind } from '../_shared/promptText.ts';
 
 const MODEL = 'claude-opus-5';
 const KINDS: InterpretationKind[] = ['natal', 'daily', 'synastry'];

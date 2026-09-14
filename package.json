@@ -62,7 +62,9 @@
     "typecheck": "tsc --noEmit",
     "build:cities": "node scripts/build-cities.mjs",
     "build:chiron": "node scripts/build-chiron.mjs",
-    "build:data": "npm run build:cities && npm run build:chiron"
+    "build:data": "npm run build:cities && npm run build:chiron",
+    "sync:shared": "node scripts/sync-shared.mjs",
+    "deploy:supabase": "node scripts/sync-shared.mjs && supabase functions deploy interpret --no-verify-jwt"
   },
   "private": true
 }
