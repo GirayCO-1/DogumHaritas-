@@ -5,7 +5,6 @@
  * Hem Harita sekmesinde hem de Anasayfa'nın "Haritam" bölümünde
  * kullanılır; iki yerde aynı içerik iki kez yazılmasın diye ayrıldı.
  */
-import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
@@ -38,7 +37,6 @@ export function ChartView({
 }) {
   const Colors = useColors();
   const s = styleSets[useScheme()];
-  const router = useRouter();
   const { width } = useWindowDimensions();
   const [selected, setSelected] = useState<BodyId | null>(null);
   const [section, setSection] = useState<Section>('planets');
@@ -54,7 +52,8 @@ export function ChartView({
         <ChartWheel chart={chart} size={wheelSize} showAspects={showAspects} showMinor={showMinor} selected={selected} onSelect={setSelected} />
         <Row gap={Spacing.two} style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
           <Chip label="Açılar" icon="git-network-outline" active={showAspects} onPress={() => setShowAspects((v) => !v)} />
-          <Chip label={HOUSE_SYSTEM_NAMES[chart.houses.system]} icon="grid-outline" onPress={() => router.push('/settings')} />
+          {/* Bilgi etiketi, kısayol değil: ev sistemi Ayarlar'dan değişir */}
+          <Chip label={HOUSE_SYSTEM_NAMES[chart.houses.system]} icon="grid-outline" />
           {chart.houses.fallbackFrom && <Chip label="Kutup enlemi: Porphyry" color={Colors.warning} active />}
           {profile.timeUnknown && <Chip label="Saat bilinmiyor" color={Colors.warning} active />}
         </Row>
