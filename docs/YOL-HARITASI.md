@@ -32,13 +32,23 @@ Profesyonel yorumcunun kullandığı, bizde henüz olmayan teknikler:
 ## 2. Arayüz
 
 Kullanıcı notu: **"şu an fazla AI kokuyor."**
+Seçilen yön: **beyaz/sıcak kâğıt zemin varsayılan**, gece modu ayarlarda.
+His olarak Astromatik + Headspace + Meditasyon karışımı.
 
-Ele alınacaklar (yön kullanıcıyla netleştirilecek):
-- Jenerik kart + chip yığını yerine kendine ait bir görsel dil
-- Tipografi hiyerarşisi: şu an her şey benzer ağırlıkta
-- Çark ekranın kahramanı olmalı, tabloların arasında kaybolmamalı
-- Boş durumlar, yükleniyor durumları, geçişler
-- Renk paleti: tek koyu tema (`src/constants/theme.ts`) korunacak, ama daha az "varsayılan mor"
+### Yapıldı
+- İki paletli tema sistemi (`light` varsayılan, `dark`), ayarlarda Açık / Gece / Cihaz seçimi
+- Yazı tipleri: Fraunces (başlık, serif) + Plus Jakarta Sans (gövde)
+- Çerçeveli kart yığını yerine gölgeyle ayrılan beyaz kartlar
+- Büyük harf mikro etiketler yerine serif bölüm başlıkları, cümle düzeninde
+- Harita ekranı yeniden kuruldu: karşılama başlığı, çark kendi gökyüzü zemininde,
+  üç temel kutucukları, "Bugün neyi merak ediyorsun?" yorum daveti
+- Çark açık zeminde okunaklı: gezegen renkleri palete göre, ASC/DSC etiketleri kırpılmıyor
+
+### Kalan
+- Gökyüzü, Uyum, Profiller, Yorum ekranları yeni dile taşındı ama ekran ekran
+  gözden geçirilmedi
+- Boş durumlar, yükleniyor durumları, geçiş animasyonları
+- Uygulama simgesi ve açılış ekranı hâlâ koyu temaya göre
 
 ---
 

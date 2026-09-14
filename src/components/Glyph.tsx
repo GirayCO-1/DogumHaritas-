@@ -8,41 +8,77 @@ import { Circle, G, Line, Path, Text as SvgText } from 'react-native-svg';
 
 import { BODIES, SIGNS } from '@/astro/constants';
 import type { BodyId } from '@/astro/types';
-import { Colors, ElementColors } from '@/constants/theme';
+import { ElementColors, useColors, useScheme, type Palette, type Scheme } from '@/constants/theme';
 
-export const BODY_COLORS: Partial<Record<BodyId, string>> = {
-  sun: '#F5C451',
-  moon: '#DDE3F5',
-  mercury: '#9ED0F5',
-  venus: '#F49AC1',
-  mars: '#F26D5B',
-  jupiter: '#F0A35E',
-  saturn: '#C9B48A',
-  uranus: '#7FE0D6',
-  neptune: '#7C9DF5',
-  pluto: '#B58CF5',
-  chiron: '#9AD6A0',
-  northNode: '#C8C3E8',
-  southNode: '#8E8AA8',
-  lilith: '#6E6A8F',
-  asc: Colors.primary,
-  mc: Colors.primary,
-  dsc: Colors.muted,
-  ic: Colors.muted,
-  vertex: Colors.muted,
-  fortune: '#5FD3A1',
+/**
+ * Gezegen renkleri her iki zeminde de okunaklı olmalı: koyu temadaki açık
+ * tonlar beyaz üstünde kayboluyor, bu yüzden açık tema için ayrı bir dizi var.
+ * Açılar (ASC/MC) paletin altın vurgusunu kullanır.
+ */
+const BODY_COLOR_SETS: Record<Scheme, Partial<Record<BodyId, string>>> = {
+  light: {
+    sun: '#C8891B',
+    moon: '#5B6899',
+    mercury: '#2E7BC4',
+    venus: '#C1537F',
+    mars: '#C24A34',
+    jupiter: '#BC7522',
+    saturn: '#7A6540',
+    uranus: '#1D8A80',
+    neptune: '#4260C4',
+    pluto: '#7A4FB5',
+    chiron: '#3C8A47',
+    northNode: '#655CA6',
+    southNode: '#8B84A3',
+    lilith: '#514C75',
+    fortune: '#2E8B6B',
+  },
+  dark: {
+    sun: '#F5C451',
+    moon: '#DDE3F5',
+    mercury: '#9ED0F5',
+    venus: '#F49AC1',
+    mars: '#F26D5B',
+    jupiter: '#F0A35E',
+    saturn: '#C9B48A',
+    uranus: '#7FE0D6',
+    neptune: '#7C9DF5',
+    pluto: '#B58CF5',
+    chiron: '#9AD6A0',
+    northNode: '#C8C3E8',
+    southNode: '#8E8AA8',
+    lilith: '#6E6A8F',
+    fortune: '#5FD3A1',
+  },
 };
 
-export function bodyColor(id: BodyId): string {
-  return BODY_COLORS[id] ?? Colors.text;
+/** Paletten türeyen renkler (açılar) sabit dizide tutulamaz, burada eklenir */
+export function bodyColorOf(id: BodyId, c: Palette): string {
+  if (id === 'asc' || id === 'mc') return c.accent;
+  if (id === 'dsc' || id === 'ic' || id === 'vertex') return c.muted;
+  return BODY_COLOR_SETS[c.scheme][id] ?? c.text;
 }
 
-export function signColor(sign: number): string {
-  return ElementColors[SIGNS[sign].element];
+export function signColorOf(sign: number, scheme: Scheme): string {
+  return ElementColors[scheme][SIGNS[sign].element];
 }
+
+/** Bileşen içinde renk seçiciyi hazır almak için */
+export function useBodyColor(): (id: BodyId) => string {
+  const c = useColors();
+  return (id) => bodyColorOf(id, c);
+}
+
+export function useSignColor(): (sign: number) => string {
+  const scheme = useScheme();
+  return (sign) => signColorOf(sign, scheme);
+}
+
+export const BODY_COLORS = BODY_COLOR_SETS;
 
 /** Metin bileşeni olarak gezegen glifi */
 export function BodyGlyph({ id, size = 18, style }: { id: BodyId; size?: number; style?: TextStyle }) {
+  const bodyColor = useBodyColor();
   const info = BODIES[id];
   const isText = /^[A-Za-z]/.test(info.symbol);
   return (
@@ -57,6 +93,7 @@ export function BodyGlyph({ id, size = 18, style }: { id: BodyId; size?: number;
 }
 
 export function SignGlyph({ sign, size = 18, style }: { sign: number; size?: number; style?: TextStyle }) {
+  const signColor = useSignColor();
   return <Text style={[{ color: signColor(sign), fontSize: size, lineHeight: size * 1.25 }, style]}>{SIGNS[sign].symbol}</Text>;
 }
 
@@ -108,9 +145,9 @@ export function SvgBodyGlyph({
   x: number;
   y: number;
   size: number;
-  color?: string;
+  color: string;
 }) {
-  const c = color ?? bodyColor(id);
+  const c = color;
   if (id === 'chiron') return <ChironPath x={x} y={y} s={size} color={c} />;
   if (id === 'lilith') return <LilithPath x={x} y={y} s={size} color={c} />;
   const info = BODIES[id];
@@ -129,9 +166,9 @@ export function SvgBodyGlyph({
   );
 }
 
-export function SvgSignGlyph({ sign, x, y, size, color }: { sign: number; x: number; y: number; size: number; color?: string }) {
+export function SvgSignGlyph({ sign, x, y, size, color }: { sign: number; x: number; y: number; size: number; color: string }) {
   return (
-    <SvgText x={x} y={y} fill={color ?? signColor(sign)} fontSize={size} textAnchor="middle" alignmentBaseline="central">
+    <SvgText x={x} y={y} fill={color} fontSize={size} textAnchor="middle" alignmentBaseline="central">
       {SIGNS[sign].symbol}
     </SvgText>
   );

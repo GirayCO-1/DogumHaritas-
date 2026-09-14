@@ -12,9 +12,9 @@ import Svg, { Circle, G, Line, Path, Text as SvgText } from 'react-native-svg';
 import { ASPECTS, SIGNS } from '@/astro/constants';
 import { norm360, zodiacPosition } from '@/astro/math';
 import type { Aspect, BodyId, BodyPosition, NatalChart } from '@/astro/types';
-import { AspectColors, Colors, ElementColors } from '@/constants/theme';
+import { useAspectColors, useColors, useElementColors, type AspectPalette } from '@/constants/theme';
 
-import { bodyColor, SvgBodyGlyph, SvgSignGlyph } from './Glyph';
+import { SvgBodyGlyph, SvgSignGlyph, useBodyColor, useSignColor } from './Glyph';
 
 export interface ChartWheelProps {
   chart: NatalChart;
@@ -100,12 +100,12 @@ function spread(lons: number[], minSep: number): number[] {
   return out;
 }
 
-function aspectStroke(a: Aspect) {
+function aspectStroke(a: Aspect, ac: AspectPalette) {
   const info = ASPECTS[a.type];
   const color =
-    a.type === 'conjunction' ? AspectColors.conjunction : info.nature === 'harmonious' ? AspectColors.harmonious : info.nature === 'tense' ? AspectColors.tense : AspectColors.minor;
+    a.type === 'conjunction' ? ac.conjunction : info.nature === 'harmonious' ? ac.harmonious : info.nature === 'tense' ? ac.tense : ac.minor;
   return {
-    color: info.major ? color : AspectColors.minor,
+    color: info.major ? color : ac.minor,
     width: 0.6 + a.strength * 1.1,
     opacity: 0.3 + a.strength * 0.55,
     dash: info.major ? undefined : '3,3',
@@ -124,6 +124,11 @@ export function ChartWheel({
   selected: selectedProp,
   onSelect,
 }: ChartWheelProps) {
+  const Colors = useColors();
+  const ElementColors = useElementColors();
+  const aspectColors = useAspectColors();
+  const bodyColor = useBodyColor();
+  const signColor = useSignColor();
   const [internalSel, setInternalSel] = useState<BodyId | null>(null);
   const selected = selectedProp !== undefined ? selectedProp : internalSel;
   const select = (id: BodyId | null) => {
@@ -135,7 +140,9 @@ export function ChartWheel({
   const hasOuter = !!outer && outer.length > 0;
 
   // Yarıçaplar
-  const rZodOut = hasOuter ? 0.425 * S : 0.455 * S;
+  // Dış halka yoksa köşe etiketleri (ASC/DSC) kuşağın dışına yazılır; kenara
+  // taşmasınlar diye yarıçap o kadar daraltılır.
+  const rZodOut = hasOuter ? 0.425 * S : 0.435 * S;
   const rZodIn = rZodOut - 0.082 * S;
   const rOuterGlyph = 0.468 * S;
   const rPlanet = rZodIn - 0.078 * S;
@@ -214,7 +221,7 @@ export function ChartWheel({
     <View style={{ width: size, height: size }}>
       <Svg width={size} height={size} viewBox={`0 0 ${S} ${S}`}>
         {/* Arka plan */}
-        <Circle cx={C} cy={C} r={rZodOut} fill={Colors.backgroundElevated} />
+        <Circle cx={C} cy={C} r={rZodOut} fill={Colors.sky} />
 
         {/* Burç kuşağı */}
         {SIGNS.map((s) => (
@@ -222,19 +229,19 @@ export function ChartWheel({
             key={s.key}
             d={sectorPath(s.index * 30, s.index * 30 + 30, rZodOut, rZodIn, asc)}
             fill={ElementColors[s.element]}
-            fillOpacity={0.14}
+            fillOpacity={Colors.scheme === 'light' ? 0.1 : 0.14}
             stroke={Colors.border}
             strokeWidth={0.8}
           />
         ))}
         {SIGNS.map((s) => {
           const p = pt(s.index * 30 + 15, (rZodOut + rZodIn) / 2, asc);
-          return <SvgSignGlyph key={`g${s.key}`} sign={s.index} x={p.x} y={p.y} size={0.05 * S} />;
+          return <SvgSignGlyph key={`g${s.key}`} sign={s.index} x={p.x} y={p.y} size={0.05 * S} color={signColor(s.index)} />;
         })}
         <Path d={ticks} stroke={Colors.textSecondary} strokeOpacity={0.55} strokeWidth={0.7} />
 
         {/* Ev çizgileri */}
-        <Circle cx={C} cy={C} r={rInner} fill={Colors.background} stroke={Colors.border} strokeWidth={0.8} />
+        <Circle cx={C} cy={C} r={rInner} fill={Colors.card} stroke={Colors.border} strokeWidth={0.8} />
         <Circle cx={C} cy={C} r={rAsp} fill="none" stroke={Colors.border} strokeWidth={0.8} />
         {chart.houses.cusps.map((cusp, i) => {
           const isAngle = i === 0 || i === 3 || i === 6 || i === 9;
@@ -247,7 +254,7 @@ export function ChartWheel({
               y1={a.y}
               x2={b.x}
               y2={b.y}
-              stroke={isAngle ? Colors.primary : Colors.textSecondary}
+              stroke={isAngle ? Colors.accent : Colors.textSecondary}
               strokeOpacity={isAngle ? 0.95 : 0.35}
               strokeWidth={isAngle ? 1.6 : 0.8}
             />
@@ -273,7 +280,7 @@ export function ChartWheel({
             if (la === undefined || lb === undefined) return null;
             const p1 = pt(la, rAsp, asc);
             const p2 = pt(lb, rAsp, asc);
-            const st = aspectStroke(a);
+            const st = aspectStroke(a, aspectColors);
             const dim = dimOthers && !involves(a);
             return (
               <Line
@@ -296,7 +303,7 @@ export function ChartWheel({
             if (la === undefined || lb === undefined || a.type === 'conjunction') return null;
             const p1 = pt(la, rAsp, asc);
             const p2 = pt(lb, rAsp, asc);
-            const st = aspectStroke(a);
+            const st = aspectStroke(a, aspectColors);
             const dim = dimOthers && a.b !== selected;
             return (
               <Line
@@ -322,7 +329,7 @@ export function ChartWheel({
               key={l.id}
               x={p.x}
               y={p.y}
-              fill={l.id === 'asc' || l.id === 'mc' ? Colors.primary : Colors.muted}
+              fill={l.id === 'asc' || l.id === 'mc' ? Colors.accent : Colors.muted}
               fontSize={0.026 * S}
               fontWeight="800"
               textAnchor="middle"
@@ -351,7 +358,7 @@ export function ChartWheel({
               {isSel && <Circle cx={gpos.x} cy={gpos.y} r={glyph * 0.72} fill={color} fillOpacity={0.18} stroke={color} strokeWidth={1} />}
               {/* dokunma alanı */}
               <Circle cx={gpos.x} cy={gpos.y} r={glyph * 0.8} fill="transparent" />
-              <SvgBodyGlyph id={p.id} x={gpos.x} y={gpos.y} size={glyph} />
+              <SvgBodyGlyph id={p.id} x={gpos.x} y={gpos.y} size={glyph} color={color} />
               <SvgText x={dpos.x} y={dpos.y} fill={Colors.textSecondary} fontSize={0.024 * S} textAnchor="middle" alignmentBaseline="central">
                 {`${z.deg}°${p.retrograde ? '℞' : ''}`}
               </SvgText>

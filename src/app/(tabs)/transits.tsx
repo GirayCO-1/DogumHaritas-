@@ -12,7 +12,7 @@ import { ChartWheel } from '@/components/ChartWheel';
 import { BodyGlyph, SignGlyph } from '@/components/Glyph';
 import { ProfileChips } from '@/components/ProfileSwitcher';
 import { Badge, Button, Card, Chip, EmptyState, Row, Screen, T } from '@/components/ui';
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing, useColors } from '@/constants/theme';
 import { useNatalChart, useTransits } from '@/hooks/useChart';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -32,6 +32,7 @@ function dayLabelFor(offsetDays: number, date: Date): string {
 }
 
 export default function TransitsScreen() {
+  const Colors = useColors();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const profiles = useAppStore((s) => s.profiles);
@@ -119,7 +120,7 @@ export default function TransitsScreen() {
         <>
           <Row gap={Spacing.two}>
             <Card style={{ flex: 1 }}>
-              <T variant="label">Ay Evresi</T>
+              <T variant="label">Ay evresi</T>
               <Row gap={8}>
                 <BodyGlyph id="moon" size={22} />
                 <View style={{ flex: 1 }}>
@@ -160,7 +161,7 @@ export default function TransitsScreen() {
           </View>
 
           <Card>
-            <T variant="label">Yorum Odağı</T>
+            <T variant="label">Yorum odağı</T>
             <Row gap={Spacing.two} style={{ flexWrap: 'wrap' }}>
               {THEME_ORDER.map((t) => (
                 <Chip key={t} label={THEMES[t].name} active={theme === t} onPress={() => setTheme(t)} />

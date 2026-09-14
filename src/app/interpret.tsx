@@ -18,7 +18,7 @@ import { computeSynastry } from '@/astro/synastry';
 import { computeTransits } from '@/astro/transits';
 import { Markdown } from '@/components/Markdown';
 import { Button, Card, Row, Screen, T } from '@/components/ui';
-import { Colors } from '@/constants/theme';
+import { useColors } from '@/constants/theme';
 import { useNatalChart } from '@/hooks/useChart';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -45,6 +45,7 @@ function toIsoDay(d: Date): string {
 }
 
 export default function InterpretScreen() {
+  const Colors = useColors();
   const params = useLocalSearchParams<{ kind?: string; a?: string; b?: string; offset?: string; date?: string; theme?: string }>();
   const router = useRouter();
   const kind = (['natal', 'daily', 'forecast', 'synastry'].includes(params.kind ?? '') ? params.kind : 'natal') as InterpretationKind;

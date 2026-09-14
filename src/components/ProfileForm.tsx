@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
 
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, forEachScheme, useColors, useScheme } from '@/constants/theme';
 import type { City } from '@/data/cities';
 import type { Profile } from '@/store/useAppStore';
 
@@ -102,6 +102,8 @@ export function ProfileForm({
   submitLabel?: string;
   saving?: boolean;
 }) {
+  const styles = stylesSets[useScheme()];
+  const Colors = useColors();
   const [f, setF] = useState<FormState>(() => fromProfile(initial));
   const [pickerOpen, setPickerOpen] = useState(false);
   const [touched, setTouched] = useState(false);
@@ -131,7 +133,7 @@ export function ProfileForm({
       </Card>
 
       <Card>
-        <T variant="label">Doğum Tarihi</T>
+        <T variant="label">Doğum tarihi</T>
         <Row gap={Spacing.two}>
           <Field label="Gün" value={f.day} onChange={(v) => set('day', v)} maxLength={2} placeholder="15" />
           <Field label="Ay" value={f.month} onChange={(v) => set('month', v)} maxLength={2} placeholder="6" />
@@ -141,7 +143,7 @@ export function ProfileForm({
 
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
-          <T variant="label">Doğum Saati</T>
+          <T variant="label">Doğum saati</T>
           <Row gap={8}>
             <T variant="small">Saati bilmiyorum</T>
             <Switch
@@ -169,7 +171,7 @@ export function ProfileForm({
       </Card>
 
       <Card>
-        <T variant="label">Doğum Yeri</T>
+        <T variant="label">Doğum yeri</T>
         <Pressable onPress={() => setPickerOpen(true)} style={({ pressed }) => [styles.cityBtn, pressed && { opacity: 0.8 }]}>
           <Ionicons name="location" size={18} color={f.city ? Colors.primary : Colors.muted} />
           <View style={{ flex: 1 }}>
@@ -237,6 +239,8 @@ function Field({
   placeholder: string;
   flex?: number;
 }) {
+  const styles = stylesSets[useScheme()];
+  const Colors = useColors();
   return (
     <View style={{ flex, gap: 4 }}>
       <T variant="caption">{label}</T>
@@ -253,13 +257,13 @@ function Field({
   );
 }
 
-const styles = StyleSheet.create({
+const stylesSets = forEachScheme((c) => StyleSheet.create({
   input: {
-    backgroundColor: Colors.cardStrong,
+    backgroundColor: c.cardStrong,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
     borderRadius: Radius.md,
-    color: Colors.text,
+    color: c.text,
     fontSize: 17,
     paddingHorizontal: 14,
     height: 48,
@@ -268,12 +272,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: Colors.cardStrong,
+    backgroundColor: c.cardStrong,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
     borderRadius: Radius.md,
     paddingHorizontal: 14,
     minHeight: 48,
     paddingVertical: 8,
   },
-});
+}));

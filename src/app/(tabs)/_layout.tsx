@@ -2,9 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, TabBarBaseHeight } from '@/constants/theme';
+import { FontFamily, TabBarBaseHeight, useColors } from '@/constants/theme';
 
 export default function TabsLayout() {
+  const Colors = useColors();
   // Android kenardan kenara çizer: sekme çubuğu sistem gezinme çubuğunun
   // altında kalmasın diye alt güvenli alan payı eklenir.
   const insets = useSafeAreaInsets();
@@ -17,39 +18,43 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: Colors.muted,
         tabBarStyle: {
           backgroundColor: Colors.tabBar,
-          borderTopColor: Colors.border,
+          borderTopWidth: 0,
           height: TabBarBaseHeight + insets.bottom,
-          paddingTop: 6,
+          paddingTop: 8,
           paddingBottom: insets.bottom,
+          // Çubuk zeminden gölgeyle ayrılır; ince çizgi kullanılmaz.
+          ...(Colors.scheme === 'light'
+            ? { shadowColor: Colors.shadow, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: -2 }, elevation: 12 }
+            : {}),
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: 11, fontFamily: FontFamily.sansSemiBold, marginTop: 2 },
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Harita',
-          tabBarIcon: ({ color, size }) => <Ionicons name="planet" size={size} color={color} />,
+          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'planet' : 'planet-outline'} size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="transits"
         options={{
           title: 'Gökyüzü',
-          tabBarIcon: ({ color, size }) => <Ionicons name="sunny" size={size} color={color} />,
+          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'sunny' : 'sunny-outline'} size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="synastry"
         options={{
           title: 'Uyum',
-          tabBarIcon: ({ color, size }) => <Ionicons name="heart" size={size} color={color} />,
+          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'heart' : 'heart-outline'} size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profiles"
         options={{
           title: 'Profiller',
-          tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
+          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'people' : 'people-outline'} size={size} color={color} />,
         }}
       />
     </Tabs>

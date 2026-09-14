@@ -8,13 +8,21 @@ import { getApiKey, maskKey, setApiKey } from '@/ai/secure';
 import { HOUSE_SYSTEM_NAMES } from '@/astro/constants';
 import type { HouseSystem, NodeType } from '@/astro/types';
 import { Button, Card, Chip, Divider, Row, Screen, T } from '@/components/ui';
-import { Colors, Radius } from '@/constants/theme';
+import { Radius, forEachScheme, useColors, useScheme, type Appearance } from '@/constants/theme';
 import { cityCount } from '@/data/cities';
 import { BUILD_PROXY_URL, useAppStore, type AiEffort, type AiMode } from '@/store/useAppStore';
 
 const HOUSE_SYSTEMS: HouseSystem[] = ['placidus', 'koch', 'whole', 'equal', 'porphyry', 'campanus', 'regiomontanus'];
 
+const APPEARANCES: [Appearance, string, string][] = [
+  ['light', 'Açık', 'sunny-outline'],
+  ['dark', 'Gece', 'moon-outline'],
+  ['system', 'Cihaz', 'phone-portrait-outline'],
+];
+
 export default function SettingsScreen() {
+  const styles = stylesSets[useScheme()];
+  const Colors = useColors();
   const settings = useAppStore((s) => s.settings);
   const update = useAppStore((s) => s.updateSettings);
   const clearInterpretations = useAppStore((s) => s.clearInterpretations);
@@ -38,9 +46,26 @@ export default function SettingsScreen() {
 
   return (
     <Screen edges={['bottom']}>
+      <T variant="heading">Görünüm</T>
+      <Card>
+        <T variant="label">Tema</T>
+        <Row gap={8} style={{ flexWrap: 'wrap' }}>
+          {APPEARANCES.map(([k, label, icon]) => (
+            <Chip
+              key={k}
+              label={label}
+              icon={icon as never}
+              active={settings.appearance === k}
+              onPress={() => update({ appearance: k })}
+            />
+          ))}
+        </Row>
+        <T variant="small">“Cihaz” seçilirse telefonun açık/koyu tercihi izlenir.</T>
+      </Card>
+
       <T variant="heading">Hesaplama</T>
       <Card>
-        <T variant="label">Ev Sistemi</T>
+        <T variant="label">Ev sistemi</T>
         <Row gap={8} style={{ flexWrap: 'wrap' }}>
           {HOUSE_SYSTEMS.map((h) => (
             <Chip key={h} label={HOUSE_SYSTEM_NAMES[h]} active={settings.houseSystem === h} onPress={() => update({ houseSystem: h })} />
@@ -48,7 +73,7 @@ export default function SettingsScreen() {
         </Row>
         <T variant="small">Placidus, Türkiye’de ve dünyada en yaygın kullanılan sistemdir. Kutup enlemlerinde otomatik olarak Porphyry’ye geçilir.</T>
         <Divider />
-        <T variant="label">Ay Düğümü</T>
+        <T variant="label">Ay düğümü</T>
         <Row gap={8}>
           {(
             [
@@ -88,7 +113,7 @@ export default function SettingsScreen() {
 
         {settings.aiMode === 'direct' && (
           <View style={{ gap: 8 }}>
-            <T variant="label">Anthropic API Anahtarı</T>
+            <T variant="label">Anthropic API anahtarı</T>
             <T variant="small">
               Anahtar cihazda güvenli alanda (Keychain / Keystore) saklanır, yalnızca api.anthropic.com’a gönderilir.{' '}
               <T variant="small" color={Colors.primary} onPress={() => Linking.openURL('https://console.anthropic.com/settings/keys')}>
@@ -143,7 +168,7 @@ export default function SettingsScreen() {
 
         {settings.aiMode === 'proxy' && !BUILD_PROXY_URL && (
           <View style={{ gap: 8 }}>
-            <T variant="label">Vekil Sunucu Adresi</T>
+            <T variant="label">Vekil sunucu adresi</T>
             <T variant="small">Anahtarı sunucuda tutmak için server/ klasöründeki örnek vekili yayınla ve adresini gir (Play Store dağıtımı için önerilen yol).</T>
             <TextInput
               value={settings.aiProxyUrl}
@@ -155,7 +180,7 @@ export default function SettingsScreen() {
               autoCorrect={false}
               keyboardType="url"
             />
-            <T variant="label">Uygulama Anahtarı (isteğe bağlı)</T>
+            <T variant="label">Uygulama anahtarı (isteğe bağlı)</T>
             <TextInput
               value={settings.aiProxyToken}
               onChangeText={(v) => update({ aiProxyToken: v })}
@@ -209,15 +234,15 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const stylesSets = forEachScheme((c) => StyleSheet.create({
   input: {
-    backgroundColor: Colors.cardStrong,
+    backgroundColor: c.cardStrong,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
     borderRadius: Radius.md,
-    color: Colors.text,
+    color: c.text,
     fontSize: 15,
     paddingHorizontal: 14,
     height: 46,
   },
-});
+}));

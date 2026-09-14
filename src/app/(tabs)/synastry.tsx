@@ -9,17 +9,18 @@ import { ChartWheel } from '@/components/ChartWheel';
 import { BodyGlyph } from '@/components/Glyph';
 import { ProfileChips } from '@/components/ProfileSwitcher';
 import { Bar, Button, Card, EmptyState, Row, Screen, T } from '@/components/ui';
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing, useColors, type Palette } from '@/constants/theme';
 import { useNatalChart, useSynastry } from '@/hooks/useChart';
 import { useAppStore } from '@/store/useAppStore';
 
-function scoreColor(score: number): string {
-  if (score >= 70) return Colors.success;
-  if (score >= 45) return Colors.primary;
-  return Colors.danger;
+function scoreColor(score: number, c: Palette): string {
+  if (score >= 70) return c.success;
+  if (score >= 45) return c.primary;
+  return c.danger;
 }
 
 export default function SynastryScreen() {
+  const Colors = useColors();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const profiles = useAppStore((s) => s.profiles);
@@ -52,7 +53,7 @@ export default function SynastryScreen() {
 
   return (
     <Screen>
-      <T variant="label">Sinastri · İlişki Uyumu</T>
+      <T variant="label">Sinastri · İlişki uyumu</T>
       <View style={{ gap: 6 }}>
         <T variant="caption">1. kişi</T>
         <ProfileChips selectedId={a?.id} onSelect={setAId} />
@@ -66,7 +67,7 @@ export default function SynastryScreen() {
             <T variant="label">
               {a.name} & {b.name}
             </T>
-            <T style={{ fontSize: 56, lineHeight: 64, fontWeight: '800', color: scoreColor(report.score) }}>{report.score}</T>
+            <T variant="display" style={{ fontSize: 56, lineHeight: 66, color: scoreColor(report.score, Colors) }}>{report.score}</T>
             <T variant="small">/ 100 genel uyum</T>
           </Card>
 
@@ -76,7 +77,7 @@ export default function SynastryScreen() {
                 <T variant="small" style={{ width: 118 }}>
                   {SYNASTRY_CATEGORY_NAMES[k]}
                 </T>
-                <Bar value={report.categories[k]} color={scoreColor(report.categories[k])} />
+                <Bar value={report.categories[k]} color={scoreColor(report.categories[k], Colors)} />
                 <T variant="mono" style={{ width: 30, textAlign: 'right' }}>
                   {report.categories[k]}
                 </T>

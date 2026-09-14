@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { BirthInput, HouseSystem, NodeType } from '@/astro/types';
+import { registerAppearanceHook, type Appearance } from '@/constants/theme';
 
 /** Kayıtlı kişi profili (cihazda saklanır) */
 export interface Profile {
@@ -29,6 +30,8 @@ export type AiMode = 'off' | 'direct' | 'proxy';
 export type AiEffort = 'low' | 'medium' | 'high';
 
 export interface Settings {
+  /** Görünüm: açık (varsayılan), koyu ya da cihaz ayarını izle */
+  appearance: Appearance;
   houseSystem: HouseSystem;
   nodeType: NodeType;
   /** Küçük açıları (30°, 45°, 72°, 135°, 144°) göster */
@@ -77,6 +80,7 @@ export const BUILD_PROXY_URL = (process.env.EXPO_PUBLIC_AI_PROXY_URL ?? '').trim
 export const BUILD_PROXY_TOKEN = (process.env.EXPO_PUBLIC_AI_PROXY_TOKEN ?? '').trim();
 
 export const DEFAULT_SETTINGS: Settings = {
+  appearance: 'light',
   houseSystem: 'placidus',
   nodeType: 'true',
   showMinorAspects: false,
@@ -196,3 +200,9 @@ export function profileToBirthInput(p: Profile): BirthInput {
 export function useActiveProfile(): Profile | undefined {
   return useAppStore((s) => s.profiles.find((p) => p.id === s.activeProfileId) ?? s.profiles[0]);
 }
+
+/**
+ * Tema modülü ayarı buradan okur. Doğrudan içe aktarma yerine kayıt yöntemi
+ * kullanılıyor ki theme.ts ile store arasında döngüsel bağımlılık olmasın.
+ */
+registerAppearanceHook(() => useAppStore((s) => s.settings.appearance));

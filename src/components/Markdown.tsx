@@ -5,9 +5,11 @@
 import { Fragment, type ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing, forEachScheme, useScheme } from '@/constants/theme';
 
-function inline(text: string, keyPrefix: string): ReactNode[] {
+type MdStyles = (typeof stylesSets)['light'];
+
+function inline(text: string, keyPrefix: string, styles: MdStyles): ReactNode[] {
   const parts: ReactNode[] = [];
   const re = /(\*\*[^*]+\*\*|_[^_]+_|\*[^*]+\*)/g;
   let last = 0;
@@ -36,6 +38,7 @@ function inline(text: string, keyPrefix: string): ReactNode[] {
 }
 
 export function Markdown({ text }: { text: string }) {
+  const styles = stylesSets[useScheme()];
   const lines = text.replace(/\r\n/g, '\n').split('\n');
   const blocks: ReactNode[] = [];
   let para: string[] = [];
@@ -46,7 +49,7 @@ export function Markdown({ text }: { text: string }) {
     const t = para.join(' ');
     blocks.push(
       <Text key={`p${key++}`} style={styles.p}>
-        {inline(t, `p${key}`)}
+        {inline(t, `p${key}`, styles)}
       </Text>,
     );
     para = [];
@@ -75,7 +78,7 @@ export function Markdown({ text }: { text: string }) {
       blocks.push(
         <View key={`l${key++}`} style={styles.li}>
           <Text style={styles.bullet}>•</Text>
-          <Text style={[styles.p, { flex: 1, marginBottom: 0 }]}>{inline(li[1], `l${key}`)}</Text>
+          <Text style={[styles.p, { flex: 1, marginBottom: 0 }]}>{inline(li[1], `l${key}`, styles)}</Text>
         </View>,
       );
       continue;
@@ -93,14 +96,14 @@ export function Markdown({ text }: { text: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  p: { color: Colors.text, fontSize: 15.5, lineHeight: 24, marginBottom: Spacing.two },
-  h: { color: Colors.primary, fontWeight: '700', marginTop: Spacing.three, marginBottom: Spacing.one },
+const stylesSets = forEachScheme((c) => StyleSheet.create({
+  p: { color: c.text, fontSize: 15.5, lineHeight: 24, marginBottom: Spacing.two },
+  h: { color: c.primary, fontWeight: '700', marginTop: Spacing.three, marginBottom: Spacing.one },
   h1: { fontSize: 22, lineHeight: 28 },
   h2: { fontSize: 18, lineHeight: 24 },
-  h3: { fontSize: 16, lineHeight: 22, color: Colors.text },
+  h3: { fontSize: 16, lineHeight: 22, color: c.text },
   li: { flexDirection: 'row', gap: 8, paddingLeft: 4, marginBottom: 6 },
-  bullet: { color: Colors.primary, fontSize: 15.5, lineHeight: 24 },
-  bold: { fontWeight: '700', color: Colors.text },
-  italic: { fontStyle: 'italic', color: Colors.textSecondary },
-});
+  bullet: { color: c.primary, fontSize: 15.5, lineHeight: 24 },
+  bold: { fontWeight: '700', color: c.text },
+  italic: { fontStyle: 'italic', color: c.textSecondary },
+}));

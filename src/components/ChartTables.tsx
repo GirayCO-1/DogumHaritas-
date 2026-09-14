@@ -6,9 +6,9 @@ import { ASPECTS, BODIES, ELEMENT_NAMES, HOUSE_NAMES, MODALITY_NAMES, SIGNS } fr
 import { DIGNITY_NAMES } from '@/astro/dignities';
 import { formatDegMin, formatSpeed } from '@/astro/format';
 import type { Aspect, BodyId, BodyPosition, Dignity, ElementBalance, ModalityBalance, NatalChart } from '@/astro/types';
-import { AspectColors, Colors, ElementColors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, forEachScheme, shadow, useAspectColors, useColors, useElementColors, useScheme, type AspectPalette } from '@/constants/theme';
 
-import { BodyGlyph, SignGlyph, bodyColor, signColor } from './Glyph';
+import { BodyGlyph, SignGlyph, useSignColor } from './Glyph';
 import { Badge, Bar, Card, Divider, Row, T } from './ui';
 
 /* ------------------------------------------------------------------ */
@@ -26,6 +26,9 @@ export function PlanetTable({
   onSelect?: (id: BodyId | null) => void;
   showPoints?: boolean;
 }) {
+  const Colors = useColors();
+  const signColor = useSignColor();
+  const tbl = tblSets[useScheme()];
   const dignityOf = new Map(chart.dignities.map((d) => [d.body, d.kind]));
   const rows: BodyPosition[] = [...chart.planets, ...(showPoints ? chart.points.filter((p) => p.id === 'asc' || p.id === 'mc' || p.id === 'fortune' || p.id === 'vertex') : [])];
   return (
@@ -76,6 +79,8 @@ export function PlanetTable({
 /* ------------------------------------------------------------------ */
 
 export function BodyDetail({ chart, id }: { chart: NatalChart; id: BodyId }) {
+  const Colors = useColors();
+  const aspectColor = useAspectColor();
   const p = [...chart.planets, ...chart.points].find((x) => x.id === id);
   if (!p) return null;
   const asp = chart.aspects.filter((a) => a.a === id || a.b === id);
@@ -127,6 +132,9 @@ export function BodyDetail({ chart, id }: { chart: NatalChart; id: BodyId }) {
 /* ------------------------------------------------------------------ */
 
 export function HouseTable({ chart }: { chart: NatalChart }) {
+  const Colors = useColors();
+  const signColor = useSignColor();
+  const tbl = tblSets[useScheme()];
   return (
     <Card style={{ padding: 0, gap: 0 }}>
       {chart.houses.cusps.map((c, i) => {
@@ -170,11 +178,16 @@ export function HouseTable({ chart }: { chart: NatalChart }) {
 /* Açılar                                                              */
 /* ------------------------------------------------------------------ */
 
-export function aspectColor(a: Aspect): string {
+export function aspectColorOf(a: Aspect, ac: AspectPalette): string {
   const info = ASPECTS[a.type];
-  if (!info.major) return AspectColors.minor;
-  if (a.type === 'conjunction') return AspectColors.conjunction;
-  return info.nature === 'harmonious' ? AspectColors.harmonious : AspectColors.tense;
+  if (!info.major) return ac.minor;
+  if (a.type === 'conjunction') return ac.conjunction;
+  return info.nature === 'harmonious' ? ac.harmonious : ac.tense;
+}
+
+export function useAspectColor(): (a: Aspect) => string {
+  const ac = useAspectColors();
+  return (a) => aspectColorOf(a, ac);
 }
 
 export function AspectList({
@@ -188,6 +201,9 @@ export function AspectList({
   labelB?: string;
   emptyText?: string;
 }) {
+  const Colors = useColors();
+  const aspectColor = useAspectColor();
+  const tbl = tblSets[useScheme()];
   if (!aspects.length)
     return (
       <Card>
@@ -238,6 +254,9 @@ export function AspectList({
 
 /** Üçgen açı matrisi */
 export function AspectGrid({ chart, bodies }: { chart: NatalChart; bodies?: readonly BodyId[] }) {
+  const Colors = useColors();
+  const aspectColor = useAspectColor();
+  const grid = gridSets[useScheme()];
   const ids: BodyId[] = (bodies ?? ['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'chiron', 'northNode', 'asc', 'mc']).filter((id) =>
     [...chart.planets, ...chart.points].some((p) => p.id === id),
   );
@@ -271,21 +290,23 @@ export function AspectGrid({ chart, bodies }: { chart: NatalChart; bodies?: read
   );
 }
 
-const grid = StyleSheet.create({
+const gridSets = forEachScheme((c) => StyleSheet.create({
   cell: {
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.border,
-    backgroundColor: Colors.card,
+    borderColor: c.border,
+    backgroundColor: c.card,
   },
-});
+}));
 
 /* ------------------------------------------------------------------ */
 /* Element / nitelik dengesi                                           */
 /* ------------------------------------------------------------------ */
 
 export function BalanceBars({ elements, modalities }: { elements: ElementBalance; modalities: ModalityBalance }) {
+  const Colors = useColors();
+  const ElementColors = useElementColors();
   const eTotal = Object.values(elements).reduce((a, b) => a + b, 0) || 1;
   const mTotal = Object.values(modalities).reduce((a, b) => a + b, 0) || 1;
   return (
@@ -325,21 +346,22 @@ export function BalanceBars({ elements, modalities }: { elements: ElementBalance
  * "Denge" sekmesine gömülü kalmamalı.
  */
 export function ElementStrip({ elements }: { elements: ElementBalance }) {
+  const ElementColors = useElementColors();
   const total = Object.values(elements).reduce((a, b) => a + b, 0) || 1;
   const keys = Object.keys(elements) as (keyof ElementBalance)[];
   const weakest = keys.reduce((lo, k) => (elements[k] < elements[lo] ? k : lo));
   return (
     <Card style={{ gap: 8 }}>
       <Row style={{ justifyContent: 'space-between' }}>
-        <T variant="label">Element Dengesi</T>
+        <T variant="label">Element dengesi</T>
         <T variant="caption">en zayıf: {ELEMENT_NAMES[weakest]}</T>
       </Row>
       <Row gap={6}>
         {keys.map((k) => {
           const pct = Math.round((elements[k] / total) * 100);
           return (
-            <View key={k} style={{ flex: Math.max(1, elements[k]), gap: 4 }}>
-              <View style={{ height: 6, borderRadius: 3, backgroundColor: ElementColors[k] }} />
+            <View key={k} style={{ flex: Math.max(1, elements[k]), gap: 5 }}>
+              <View style={{ height: 8, borderRadius: 4, backgroundColor: ElementColors[k] }} />
               <T variant="caption" color={ElementColors[k]} numberOfLines={1}>
                 {ELEMENT_NAMES[k]} %{pct}
               </T>
@@ -353,23 +375,27 @@ export function ElementStrip({ elements }: { elements: ElementBalance }) {
 
 /** Üçlü özet: Güneş / Ay / Yükselen */
 export function BigThree({ chart }: { chart: NatalChart }) {
+  const signColor = useSignColor();
+  const big = bigSets[useScheme()];
   const items: { label: string; id: BodyId; sign: number }[] = [
     { label: 'Güneş', id: 'sun', sign: chart.summary.sunSign },
     { label: 'Ay', id: 'moon', sign: chart.summary.moonSign },
     { label: 'Yükselen', id: 'asc', sign: chart.summary.ascSign },
   ];
   return (
-    <Row gap={Spacing.two}>
+    <Row gap={Spacing.two} align="stretch">
       {items.map((it) => (
         <View key={it.id} style={big.item}>
-          <Row gap={6}>
-            <BodyGlyph id={it.id} size={16} />
-            <T variant="caption">{it.label}</T>
-          </Row>
-          <Row gap={6}>
-            <SignGlyph sign={it.sign} size={22} />
-            <T variant="subheading" color={signColor(it.sign)}>
-              {SIGNS[it.sign].name}
+          <View style={big.glyph}>
+            <SignGlyph sign={it.sign} size={26} />
+          </View>
+          <T variant="heading" color={signColor(it.sign)} numberOfLines={1}>
+            {SIGNS[it.sign].name}
+          </T>
+          <Row gap={5}>
+            <BodyGlyph id={it.id} size={13} />
+            <T variant="caption" numberOfLines={1}>
+              {it.label}
             </T>
           </Row>
         </View>
@@ -378,32 +404,43 @@ export function BigThree({ chart }: { chart: NatalChart }) {
   );
 }
 
-const big = StyleSheet.create({
+const bigSets = forEachScheme((c) => StyleSheet.create({
   item: {
     flex: 1,
-    backgroundColor: Colors.card,
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.border,
-    padding: 12,
+    alignItems: 'center',
+    backgroundColor: c.card,
+    borderRadius: Radius.lg,
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.two,
     gap: 6,
+    ...(c.scheme === 'light'
+      ? shadow(c, 1)
+      : { borderWidth: StyleSheet.hairlineWidth, borderColor: c.border }),
   },
-});
+  glyph: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.cardStrong,
+    marginBottom: 2,
+  },
+}));
 
-const tbl = StyleSheet.create({
+const tblSets = forEachScheme((c) => StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12 },
   glyphBox: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: Colors.cardStrong,
+    backgroundColor: c.cardStrong,
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));
 
 export function RetroIcon() {
+  const Colors = useColors();
   return <Ionicons name="refresh" size={12} color={Colors.danger} />;
 }
-
-export { bodyColor };

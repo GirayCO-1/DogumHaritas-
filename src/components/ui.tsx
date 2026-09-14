@@ -16,7 +16,17 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, MaxContentWidth, Radius, Spacing, TabBarBaseHeight } from '@/constants/theme';
+import {
+  FontFamily,
+  forEachScheme,
+  MaxContentWidth,
+  Radius,
+  Spacing,
+  TabBarBaseHeight,
+  shadow,
+  useColors,
+  useScheme,
+} from '@/constants/theme';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -24,7 +34,21 @@ export type IconName = ComponentProps<typeof Ionicons>['name'];
 /* Metin                                                               */
 /* ------------------------------------------------------------------ */
 
-type TextVariant = 'body' | 'small' | 'caption' | 'title' | 'heading' | 'subheading' | 'label' | 'mono';
+/**
+ * `display`/`title`/`heading`/`label` serif (Fraunces), gerisi sans.
+ * Özel yazı tiplerinde her kalınlık ayrı bir aile olduğu için `fontWeight`
+ * ile birleştirilmez.
+ */
+type TextVariant =
+  | 'display'
+  | 'title'
+  | 'heading'
+  | 'label'
+  | 'subheading'
+  | 'body'
+  | 'small'
+  | 'caption'
+  | 'mono';
 
 export function T({
   variant = 'body',
@@ -32,19 +56,24 @@ export function T({
   style,
   ...rest
 }: TextProps & { variant?: TextVariant; color?: string }) {
-  return <Text style={[text[variant], color ? { color } : null, style]} {...rest} />;
+  const scheme = useScheme();
+  return <Text style={[text[scheme][variant], color ? { color } : null, style]} {...rest} />;
 }
 
-const text = StyleSheet.create<Record<TextVariant, TextStyle>>({
-  body: { color: Colors.text, fontSize: 15, lineHeight: 22 },
-  small: { color: Colors.textSecondary, fontSize: 13, lineHeight: 18 },
-  caption: { color: Colors.muted, fontSize: 11.5, lineHeight: 15, letterSpacing: 0.3 },
-  title: { color: Colors.text, fontSize: 26, lineHeight: 32, fontWeight: '700', letterSpacing: -0.3 },
-  heading: { color: Colors.text, fontSize: 19, lineHeight: 25, fontWeight: '700' },
-  subheading: { color: Colors.text, fontSize: 15.5, lineHeight: 21, fontWeight: '600' },
-  label: { color: Colors.muted, fontSize: 11, lineHeight: 14, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase' },
-  mono: { color: Colors.textSecondary, fontSize: 13, fontVariant: ['tabular-nums'] },
-});
+const text = forEachScheme((c) =>
+  StyleSheet.create<Record<TextVariant, TextStyle>>({
+    display: { color: c.text, fontFamily: FontFamily.displayBold, fontSize: 30, lineHeight: 38, letterSpacing: -0.4 },
+    title: { color: c.text, fontFamily: FontFamily.displayBold, fontSize: 24, lineHeight: 31, letterSpacing: -0.2 },
+    heading: { color: c.text, fontFamily: FontFamily.display, fontSize: 19, lineHeight: 26 },
+    // Bölüm başlığı. Eskiden büyük harf mikro etiketti; artık serif bir başlık.
+    label: { color: c.text, fontFamily: FontFamily.display, fontSize: 17, lineHeight: 24 },
+    subheading: { color: c.text, fontFamily: FontFamily.sansSemiBold, fontSize: 15.5, lineHeight: 21 },
+    body: { color: c.text, fontFamily: FontFamily.sans, fontSize: 15, lineHeight: 23 },
+    small: { color: c.textSecondary, fontFamily: FontFamily.sans, fontSize: 13.5, lineHeight: 20 },
+    caption: { color: c.muted, fontFamily: FontFamily.sansMedium, fontSize: 11.5, lineHeight: 15, letterSpacing: 0.2 },
+    mono: { color: c.textSecondary, fontFamily: FontFamily.sansMedium, fontSize: 13, fontVariant: ['tabular-nums'] },
+  }),
+);
 
 /* ------------------------------------------------------------------ */
 /* Yerleşim                                                            */
@@ -81,22 +110,23 @@ export function Screen({
   underTabBar?: boolean;
 }) {
   const insets = useSafeAreaInsets();
+  const s = layout[useScheme()];
   const hasTabBar = underTabBar ?? !includesBottomEdge(edges);
   // 'bottom' kenarı verildiyse alt payı zaten SafeAreaView ekler.
   const paddingBottom = hasTabBar ? TabBarBaseHeight + insets.bottom + Spacing.four : Spacing.four;
 
-  const inner = <View style={[layout.content, contentStyle]}>{children}</View>;
+  const inner = <View style={[s.content, contentStyle]}>{children}</View>;
   return (
-    <SafeAreaView style={layout.screen} edges={edges}>
+    <SafeAreaView style={s.screen} edges={edges}>
       {scroll ? (
         <ScrollView
-          contentContainerStyle={[layout.scroll, { paddingBottom }]}
+          contentContainerStyle={[s.scroll, { paddingBottom }]}
           keyboardShouldPersistTaps="handled"
           refreshControl={refreshControl}>
           {inner}
         </ScrollView>
       ) : (
-        <View style={[layout.scroll, { paddingBottom }]}>{inner}</View>
+        <View style={[s.scroll, { paddingBottom }]}>{inner}</View>
       )}
     </SafeAreaView>
   );
@@ -114,10 +144,12 @@ export function Card({
   children,
   style,
   tone = 'default',
+  flat,
   ...rest
-}: ViewProps & { tone?: 'default' | 'strong' | 'primary' | 'accent' }) {
+}: ViewProps & { tone?: 'default' | 'strong' | 'primary' | 'accent'; flat?: boolean }) {
+  const s = layout[useScheme()];
   return (
-    <View style={[layout.card, layout[`card_${tone}`], style]} {...rest}>
+    <View style={[s.card, !flat && s.cardShadow, s[`card_${tone}`], style]} {...rest}>
       {children}
     </View>
   );
@@ -134,8 +166,9 @@ export function SectionTitle({
   right?: ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
+  const s = layout[useScheme()];
   return (
-    <View style={[layout.sectionTitle, style]}>
+    <View style={[s.sectionTitle, style]}>
       <View style={{ flex: 1 }}>
         <T variant="heading">{title}</T>
         {subtitle ? (
@@ -150,28 +183,37 @@ export function SectionTitle({
 }
 
 export function Divider({ style }: { style?: StyleProp<ViewStyle> }) {
-  return <View style={[layout.divider, style]} />;
+  return <View style={[layout[useScheme()].divider, style]} />;
 }
 
-const layout = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.background },
-  scroll: { flexGrow: 1, alignItems: 'center' },
-  content: { width: '100%', maxWidth: MaxContentWidth, paddingHorizontal: Spacing.three, gap: Spacing.three, paddingTop: Spacing.two },
-  card: {
-    backgroundColor: Colors.card,
-    borderRadius: Radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.border,
-    padding: Spacing.three,
-    gap: Spacing.two,
-  },
-  card_default: {},
-  card_strong: { backgroundColor: Colors.cardStrong, borderColor: Colors.borderStrong },
-  card_primary: { backgroundColor: Colors.primarySoft, borderColor: 'rgba(230,184,92,0.35)' },
-  card_accent: { backgroundColor: Colors.accentSoft, borderColor: 'rgba(139,124,246,0.4)' },
-  sectionTitle: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.two, marginTop: Spacing.two },
-  divider: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.border, marginVertical: Spacing.one },
-});
+const layout = forEachScheme((c) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.background },
+    scroll: { flexGrow: 1, alignItems: 'center' },
+    content: {
+      width: '100%',
+      maxWidth: MaxContentWidth,
+      paddingHorizontal: Spacing.three,
+      gap: Spacing.three,
+      paddingTop: Spacing.two,
+    },
+    card: {
+      backgroundColor: c.card,
+      borderRadius: Radius.lg,
+      padding: Spacing.three + 2,
+      gap: Spacing.two,
+    },
+    // Açık temada kartlar çerçeveyle değil gölgeyle ayrılır; koyu temada
+    // gölge görünmediği için ince bir çerçeve kalır.
+    cardShadow: c.scheme === 'light' ? shadow(c, 1) : { borderWidth: StyleSheet.hairlineWidth, borderColor: c.border },
+    card_default: {},
+    card_strong: { backgroundColor: c.cardStrong },
+    card_primary: { backgroundColor: c.primarySoft },
+    card_accent: { backgroundColor: c.accentSoft },
+    sectionTitle: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.two, marginTop: Spacing.two },
+    divider: { height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginVertical: Spacing.one },
+  }),
+);
 
 /* ------------------------------------------------------------------ */
 /* Etkileşim                                                           */
@@ -198,19 +240,21 @@ export function Button({
   style?: StyleProp<ViewStyle>;
   small?: boolean;
 }) {
+  const c = useColors();
+  const s = btn[c.scheme];
   const isDisabled = disabled || loading;
-  const fg = variant === 'primary' ? '#1A1405' : variant === 'danger' ? Colors.danger : Colors.text;
+  const fg = variant === 'primary' ? c.onPrimary : variant === 'danger' ? c.danger : c.text;
   return (
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
       disabled={isDisabled}
       style={({ pressed }) => [
-        btn.base,
-        btn[variant],
-        small && btn.small,
-        pressed && { opacity: 0.75, transform: [{ scale: 0.99 }] },
-        isDisabled && { opacity: 0.5 },
+        s.base,
+        s[variant],
+        small && s.small,
+        pressed && { opacity: 0.85, transform: [{ scale: 0.985 }] },
+        isDisabled && { opacity: 0.45 },
         style,
       ]}>
       {loading ? (
@@ -218,33 +262,37 @@ export function Button({
       ) : (
         <>
           {icon ? <Ionicons name={icon} size={small ? 15 : 18} color={fg} /> : null}
-          <Text style={[btn.text, { color: fg }, small && { fontSize: 13 }]}>{title}</Text>
+          <Text style={[s.text, { color: fg }, small && { fontSize: 13.5 }]}>{title}</Text>
         </>
       )}
     </Pressable>
   );
 }
 
-const btn = StyleSheet.create<Record<ButtonVariant | 'base' | 'text' | 'small', ViewStyle & TextStyle>>({
-  base: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.two,
-    paddingVertical: 13,
-    paddingHorizontal: Spacing.four,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  small: { paddingVertical: 8, paddingHorizontal: Spacing.three, borderRadius: Radius.sm },
-  text: { fontSize: 15, fontWeight: '700' },
-  primary: { backgroundColor: Colors.primary },
-  secondary: { backgroundColor: Colors.cardStrong, borderColor: Colors.borderStrong },
-  ghost: { backgroundColor: 'transparent', borderColor: Colors.border },
-  danger: { backgroundColor: 'rgba(240,100,122,0.12)', borderColor: 'rgba(240,100,122,0.4)' },
-});
+const btn = forEachScheme((c) =>
+  StyleSheet.create<Record<ButtonVariant | 'base' | 'text' | 'small', ViewStyle & TextStyle>>({
+    base: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: Spacing.two,
+      paddingVertical: 15,
+      paddingHorizontal: Spacing.four,
+      borderRadius: Radius.pill,
+    },
+    small: { paddingVertical: 9, paddingHorizontal: Spacing.three },
+    text: { fontFamily: FontFamily.sansBold, fontSize: 15 },
+    primary: { backgroundColor: c.primary },
+    secondary: { backgroundColor: c.cardStrong },
+    ghost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: c.borderStrong },
+    danger: { backgroundColor: c.scheme === 'light' ? 'rgba(194,69,90,0.10)' : 'rgba(240,100,122,0.12)' },
+  }),
+);
 
+/**
+ * Yumuşak dolgulu etiket. Çerçeve yerine zemin tonu kullanılır — üst üste
+ * gelen çerçeveli etiketler arayüzü kalabalık gösteriyordu.
+ */
 export function Chip({
   label,
   active,
@@ -260,37 +308,34 @@ export function Chip({
   icon?: IconName;
   style?: StyleProp<ViewStyle>;
 }) {
-  const tint = color ?? Colors.primary;
+  const c = useColors();
+  const s = chip[c.scheme];
+  const tint = color ?? c.primary;
   return (
     <Pressable
       onPress={onPress}
       disabled={!onPress}
-      style={({ pressed }) => [
-        chip.base,
-        active && { backgroundColor: `${tint}26`, borderColor: `${tint}99` },
-        pressed && { opacity: 0.7 },
-        style,
-      ]}>
-      {icon ? <Ionicons name={icon} size={13} color={active ? tint : Colors.textSecondary} /> : null}
-      <Text style={[chip.text, active && { color: tint }]}>{label}</Text>
+      style={({ pressed }) => [s.base, active && { backgroundColor: `${tint}22` }, pressed && { opacity: 0.7 }, style]}>
+      {icon ? <Ionicons name={icon} size={14} color={active ? tint : c.textSecondary} /> : null}
+      <Text style={[s.text, active && { color: tint, fontFamily: FontFamily.sansBold }]}>{label}</Text>
     </Pressable>
   );
 }
 
-const chip = StyleSheet.create({
-  base: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.card,
-  },
-  text: { color: Colors.textSecondary, fontSize: 13, fontWeight: '600' },
-});
+const chip = forEachScheme((c) =>
+  StyleSheet.create({
+    base: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingVertical: 9,
+      paddingHorizontal: 14,
+      borderRadius: Radius.pill,
+      backgroundColor: c.cardStrong,
+    },
+    text: { color: c.textSecondary, fontFamily: FontFamily.sansSemiBold, fontSize: 13.5 },
+  }),
+);
 
 export function ListRow({
   title,
@@ -307,33 +352,37 @@ export function ListRow({
   right?: ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
+  const c = useColors();
+  const s = row[c.scheme];
   return (
     <Pressable
       onPress={onPress}
       disabled={!onPress}
-      style={({ pressed }) => [row.base, pressed && onPress ? { backgroundColor: Colors.cardStrong } : null, style]}
+      style={({ pressed }) => [s.base, pressed && onPress ? { backgroundColor: c.cardStrong } : null, style]}
       {...rest}>
-      {left ? <View style={row.left}>{left}</View> : null}
+      {left ? <View style={s.left}>{left}</View> : null}
       <View style={{ flex: 1, gap: 2 }}>
         {typeof title === 'string' ? <T variant="subheading">{title}</T> : title}
         {subtitle ? typeof subtitle === 'string' ? <T variant="small">{subtitle}</T> : subtitle : null}
       </View>
-      {right ?? (onPress ? <Ionicons name="chevron-forward" size={18} color={Colors.muted} /> : null)}
+      {right ?? (onPress ? <Ionicons name="chevron-forward" size={18} color={c.muted} /> : null)}
     </Pressable>
   );
 }
 
-const row = StyleSheet.create({
-  base: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingVertical: 12,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Radius.md,
-  },
-  left: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.cardStrong },
-});
+const row = forEachScheme((c) =>
+  StyleSheet.create({
+    base: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.three,
+      paddingVertical: 13,
+      paddingHorizontal: Spacing.three,
+      borderRadius: Radius.md,
+    },
+    left: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: c.cardStrong },
+  }),
+);
 
 export function EmptyState({
   icon = 'planet-outline',
@@ -346,12 +395,14 @@ export function EmptyState({
   text?: string;
   action?: ReactNode;
 }) {
+  const c = useColors();
+  const s = empty[c.scheme];
   return (
-    <View style={empty.base}>
-      <View style={empty.iconWrap}>
-        <Ionicons name={icon} size={34} color={Colors.primary} />
+    <View style={s.base}>
+      <View style={s.iconWrap}>
+        <Ionicons name={icon} size={34} color={c.primary} />
       </View>
-      <T variant="heading" style={{ textAlign: 'center' }}>
+      <T variant="title" style={{ textAlign: 'center' }}>
         {title}
       </T>
       {body ? (
@@ -359,37 +410,49 @@ export function EmptyState({
           {body}
         </T>
       ) : null}
-      {action ? <View style={{ marginTop: Spacing.two }}>{action}</View> : null}
+      {action ? <View style={{ marginTop: Spacing.three }}>{action}</View> : null}
     </View>
   );
 }
 
-const empty = StyleSheet.create({
-  base: { alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.six, paddingHorizontal: Spacing.four },
-  iconWrap: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: Colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.two,
-  },
-});
+const empty = forEachScheme((c) =>
+  StyleSheet.create({
+    base: { alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.six, paddingHorizontal: Spacing.four },
+    iconWrap: {
+      width: 84,
+      height: 84,
+      borderRadius: 42,
+      backgroundColor: c.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: Spacing.two,
+    },
+  }),
+);
 
-export function Badge({ label, color = Colors.accent }: { label: string; color?: string }) {
+export function Badge({ label, color }: { label: string; color?: string }) {
+  const c = useColors();
+  const tint = color ?? c.accent;
   return (
-    <View style={{ backgroundColor: `${color}26`, borderRadius: Radius.pill, paddingHorizontal: 8, paddingVertical: 2 }}>
-      <Text style={{ color, fontSize: 11, fontWeight: '700' }}>{label}</Text>
+    <View style={{ backgroundColor: `${tint}22`, borderRadius: Radius.pill, paddingHorizontal: 9, paddingVertical: 3 }}>
+      <Text style={{ color: tint, fontFamily: FontFamily.sansBold, fontSize: 11 }}>{label}</Text>
     </View>
   );
 }
 
 /** Yatay ilerleme çubuğu (0–100) */
-export function Bar({ value, color = Colors.primary, height = 8 }: { value: number; color?: string; height?: number }) {
+export function Bar({ value, color, height = 8 }: { value: number; color?: string; height?: number }) {
+  const c = useColors();
   return (
-    <View style={{ height, borderRadius: height / 2, backgroundColor: Colors.cardStrong, overflow: 'hidden', flex: 1 }}>
-      <View style={{ width: `${Math.max(0, Math.min(100, value))}%`, height: '100%', backgroundColor: color, borderRadius: height / 2 }} />
+    <View style={{ height, borderRadius: height / 2, backgroundColor: c.cardStrong, overflow: 'hidden', flex: 1 }}>
+      <View
+        style={{
+          width: `${Math.max(0, Math.min(100, value))}%`,
+          height: '100%',
+          backgroundColor: color ?? c.primary,
+          borderRadius: height / 2,
+        }}
+      />
     </View>
   );
 }

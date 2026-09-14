@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing, forEachScheme, useColors, useScheme } from '@/constants/theme';
 
 import { Button, Chip, Row, T } from './ui';
 
@@ -42,6 +42,7 @@ export function DateJumpModal({
   onClose: () => void;
   onSelect: (date: Date) => void;
 }) {
+  const styles = stylesSets[useScheme()];
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">
       <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
@@ -62,6 +63,8 @@ function DateJumpForm({
   onClose: () => void;
   onSelect: (date: Date) => void;
 }) {
+  const styles = stylesSets[useScheme()];
+  const Colors = useColors();
   const [day, setDay] = useState(() => String(initial.getDate()));
   const [month, setMonth] = useState(() => String(initial.getMonth() + 1));
   const [year, setYear] = useState(() => String(initial.getFullYear()));
@@ -147,6 +150,8 @@ function Field({
   placeholder: string;
   flex?: number;
 }) {
+  const styles = stylesSets[useScheme()];
+  const Colors = useColors();
   return (
     <View style={{ flex, gap: 4 }}>
       <T variant="caption">{label}</T>
@@ -163,8 +168,8 @@ function Field({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.background },
+const stylesSets = forEachScheme((c) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   inner: {
     width: '100%',
     maxWidth: MaxContentWidth,
@@ -174,13 +179,13 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   input: {
-    backgroundColor: Colors.cardStrong,
+    backgroundColor: c.cardStrong,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
     borderRadius: Radius.md,
-    color: Colors.text,
+    color: c.text,
     fontSize: 17,
     textAlign: 'center',
     height: 48,
   },
-});
+}));

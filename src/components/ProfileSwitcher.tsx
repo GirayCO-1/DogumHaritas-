@@ -4,7 +4,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 
 import { formatLocal } from '@/astro/time';
 import type { NatalChart } from '@/astro/types';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing, useColors } from '@/constants/theme';
 import { useAppStore, type Profile } from '@/store/useAppStore';
 
 import { Chip, Row, T } from './ui';
@@ -20,6 +20,7 @@ export function ProfileChips({
   exclude?: string | null;
 }) {
   const profiles = useAppStore((s) => s.profiles);
+  const Colors = useColors();
   const router = useRouter();
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Spacing.two, paddingVertical: 2 }}>
@@ -35,6 +36,7 @@ export function ProfileChips({
 
 /** Profil adı, tarih ve yer bilgisi başlığı */
 export function ProfileHeader({ profile, chart, onEdit }: { profile: Profile; chart: NatalChart | null; onEdit?: () => void }) {
+  const Colors = useColors();
   const dateText = chart ? formatLocal(chart.meta.utc, chart.meta.timeZone, !profile.timeUnknown) : `${profile.day}.${profile.month}.${profile.year}`;
   return (
     <Row style={{ alignItems: 'flex-start' }}>

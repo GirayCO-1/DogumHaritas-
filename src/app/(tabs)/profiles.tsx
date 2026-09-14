@@ -5,7 +5,7 @@ import { Alert, Platform, Pressable } from 'react-native';
 import { computeNatalChart } from '@/astro/chart';
 import { SignGlyph } from '@/components/Glyph';
 import { Badge, Button, Card, EmptyState, ListRow, Row, Screen, T } from '@/components/ui';
-import { Colors } from '@/constants/theme';
+import { useColors } from '@/constants/theme';
 import { profileToBirthInput, useAppStore, type Profile } from '@/store/useAppStore';
 
 function sunSignOf(p: Profile): number | null {
@@ -28,6 +28,7 @@ function confirmDelete(name: string, onOk: () => void) {
 }
 
 export default function ProfilesScreen() {
+  const Colors = useColors();
   const router = useRouter();
   const profiles = useAppStore((s) => s.profiles);
   const activeId = useAppStore((s) => s.activeProfileId);

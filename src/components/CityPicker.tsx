@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing, forEachScheme, useColors, useScheme } from '@/constants/theme';
 import { cityLabel, popularCities, searchCities, type City } from '@/data/cities';
 
 import { ListRow, T } from './ui';
@@ -17,6 +17,8 @@ export function CityPicker({
   onClose: () => void;
   onSelect: (city: City) => void;
 }) {
+  const styles = stylesSets[useScheme()];
+  const Colors = useColors();
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
 
@@ -91,21 +93,21 @@ export function CityPicker({
 
 export { cityLabel };
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.background },
+const stylesSets = forEachScheme((c) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   inner: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: Spacing.three, gap: Spacing.two },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.two },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: Colors.cardStrong,
+    backgroundColor: c.cardStrong,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
     paddingHorizontal: 12,
     height: 46,
   },
-  input: { flex: 1, color: Colors.text, fontSize: 15 },
-  sep: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.border },
-});
+  input: { flex: 1, color: c.text, fontSize: 15 },
+  sep: { height: StyleSheet.hairlineWidth, backgroundColor: c.border },
+}));
