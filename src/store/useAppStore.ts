@@ -65,13 +65,25 @@ interface AppState {
   setHydrated: (v: boolean) => void;
 }
 
+/**
+ * Derleme zamanında gömülen vekil adresi (.env → EXPO_PUBLIC_AI_PROXY_URL).
+ *
+ * Doluysa uygulama kutudan çıktığı gibi yapay zekâ yorumu verir: istek
+ * senin Cloudflare Worker'ına gider, Anthropic anahtarı orada durur.
+ * ANAHTARIN KENDİSİ ASLA BURAYA YAZILMAZ — EXPO_PUBLIC_ değişkenleri JS
+ * paketine gömülür ve APK'dan okunabilir.
+ */
+export const BUILD_PROXY_URL = (process.env.EXPO_PUBLIC_AI_PROXY_URL ?? '').trim();
+export const BUILD_PROXY_TOKEN = (process.env.EXPO_PUBLIC_AI_PROXY_TOKEN ?? '').trim();
+
 export const DEFAULT_SETTINGS: Settings = {
   houseSystem: 'placidus',
   nodeType: 'true',
   showMinorAspects: false,
-  aiMode: 'off',
-  aiProxyUrl: '',
-  aiProxyToken: '',
+  // Vekil tanımlıysa yapay zekâ açık gelir, değilse kullanıcı kendi anahtarını girer
+  aiMode: BUILD_PROXY_URL ? 'proxy' : 'off',
+  aiProxyUrl: BUILD_PROXY_URL,
+  aiProxyToken: BUILD_PROXY_TOKEN,
   aiEffort: 'medium',
 };
 
@@ -148,7 +160,15 @@ export const useAppStore = create<AppState>()(
       // Eski sürümden gelen kayıtlarda yeni ayar alanları eksik olabilir
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>;
-        return { ...current, ...p, settings: { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) } };
+        const settings: Settings = { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) };
+        // Vekil adresi uygulamayla gelir: yeni sürümde değişmişse güncellenir.
+        // Kullanıcı kendi anahtarını seçtiyse (direct) tercihine dokunulmaz.
+        if (BUILD_PROXY_URL && settings.aiMode !== 'direct') {
+          settings.aiProxyUrl = BUILD_PROXY_URL;
+          settings.aiProxyToken = BUILD_PROXY_TOKEN;
+          if (settings.aiMode === 'off') settings.aiMode = 'proxy';
+        }
+        return { ...current, ...p, settings };
       },
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);

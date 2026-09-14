@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Alert, Platform, Pressable, View } from 'react-native';
+import { Alert, Platform, Pressable } from 'react-native';
 
 import { computeNatalChart } from '@/astro/chart';
 import { SignGlyph } from '@/components/Glyph';
@@ -95,7 +95,6 @@ export default function ProfilesScreen() {
           <Button title="Yeni Profil" icon="add" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: 'new' } })} />
         </>
       )}
-      <View style={{ height: 24 }} />
     </Screen>
   );
 }

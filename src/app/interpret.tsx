@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 
 import { AiError, interpret } from '@/ai/claude';
 import { interpretationKey, serializeChart, serializeSynastry, serializeTransits, type InterpretationKind } from '@/ai/prompts';
@@ -170,7 +170,6 @@ export default function InterpretScreen() {
             </T>
           </>
         )}
-        <View style={{ height: 24 }} />
       </Screen>
     </>
   );

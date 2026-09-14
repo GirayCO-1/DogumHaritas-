@@ -14,9 +14,9 @@ import {
   type ViewProps,
   type ViewStyle,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { Colors, MaxContentWidth, Radius, Spacing, TabBarBaseHeight } from '@/constants/theme';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -50,31 +50,53 @@ const text = StyleSheet.create<Record<TextVariant, TextStyle>>({
 /* Yerleşim                                                            */
 /* ------------------------------------------------------------------ */
 
+type SafeAreaEdges = ComponentProps<typeof SafeAreaView>['edges'];
+
+/** `edges` hem dizi (['top','bottom']) hem nesne ({ bottom: 'maximum' }) olabilir */
+function includesBottomEdge(edges: SafeAreaEdges): boolean {
+  if (!edges) return false;
+  return Array.isArray(edges)
+    ? (edges as readonly string[]).includes('bottom')
+    : Boolean((edges as Readonly<Record<string, unknown>>).bottom);
+}
+
 export function Screen({
   children,
   scroll = true,
   contentStyle,
   edges = ['top'],
   refreshControl,
+  underTabBar,
 }: {
   children: ReactNode;
   scroll?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
-  edges?: ComponentProps<typeof SafeAreaView>['edges'];
+  edges?: SafeAreaEdges;
   refreshControl?: ComponentProps<typeof ScrollView>['refreshControl'];
+  /**
+   * Ekran sekme çubuğunun altında mı kalıyor? Son içerik çubuğun arkasında
+   * kaybolmasın diye alt boşluk eklenir. Varsayılan: 'bottom' güvenli alan
+   * kenarı verilmediyse evet — sekme ekranları öyle, yığın ekranları değil.
+   */
+  underTabBar?: boolean;
 }) {
+  const insets = useSafeAreaInsets();
+  const hasTabBar = underTabBar ?? !includesBottomEdge(edges);
+  // 'bottom' kenarı verildiyse alt payı zaten SafeAreaView ekler.
+  const paddingBottom = hasTabBar ? TabBarBaseHeight + insets.bottom + Spacing.four : Spacing.four;
+
   const inner = <View style={[layout.content, contentStyle]}>{children}</View>;
   return (
     <SafeAreaView style={layout.screen} edges={edges}>
       {scroll ? (
         <ScrollView
-          contentContainerStyle={layout.scroll}
+          contentContainerStyle={[layout.scroll, { paddingBottom }]}
           keyboardShouldPersistTaps="handled"
           refreshControl={refreshControl}>
           {inner}
         </ScrollView>
       ) : (
-        <View style={layout.scroll}>{inner}</View>
+        <View style={[layout.scroll, { paddingBottom }]}>{inner}</View>
       )}
     </SafeAreaView>
   );
@@ -133,7 +155,7 @@ export function Divider({ style }: { style?: StyleProp<ViewStyle> }) {
 
 const layout = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.background },
-  scroll: { flexGrow: 1, alignItems: 'center', paddingBottom: Spacing.six },
+  scroll: { flexGrow: 1, alignItems: 'center' },
   content: { width: '100%', maxWidth: MaxContentWidth, paddingHorizontal: Spacing.three, gap: Spacing.three, paddingTop: Spacing.two },
   card: {
     backgroundColor: Colors.card,

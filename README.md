@@ -90,8 +90,29 @@ scripts/            veri üretim betikleri
 
 Ayarlar → Yapay Zekâ Yorumu:
 
-1. **Kendi API anahtarım** — anahtar cihazda Keychain/Keystore'da saklanır, doğrudan `api.anthropic.com`'a gider. Kişisel kullanım için.
-2. **Sunucu vekili** — Play Store dağıtımı için önerilen yol. `server/` klasöründeki Cloudflare Worker'ı yayınla, adresini gir; anahtar yalnızca sunucuda durur.
+1. **Kendi API anahtarım** — anahtar cihazda Keychain/Keystore'da saklanır, doğrudan `api.anthropic.com`'a gider. Geliştirme ve kişisel kullanım için.
+2. **Sunucu vekili** — dağıtım için tek doğru yol. Anahtar yalnızca sunucuda durur.
+
+### Tüm kullanıcılara tek anahtarla yorum (dağıtım)
+
+Kullanıcıların hiçbir ayar yapmadan yorum alması ve faturanın sana gelmesi için:
+
+```bash
+cd server && npm install
+npx wrangler login
+npx wrangler secret put ANTHROPIC_API_KEY   # anahtar YALNIZCA burada
+npm run deploy                              # → https://...workers.dev
+cd ..
+cp .env.example .env                        # EXPO_PUBLIC_AI_PROXY_URL'i doldur
+```
+
+`.env` dolduğunda uygulama kutudan çıktığı gibi vekili kullanır; Ayarlar'da "Uygulama sunucusu kullanılıyor" yazar ve anahtar kutusu hiç görünmez.
+
+> **API anahtarını asla uygulamaya gömme.** APK herkese açık bir arşivdir; içindeki
+> metinler tek komutla çıkarılır ve gömülü anahtarları tarayan botlar vardır.
+> `EXPO_PUBLIC_*` değişkenleri de JS paketine gömülür — oraya yalnızca vekil
+> adresi yazılır, anahtar değil. Kötüye kullanıma karşı asıl koruma Cloudflare
+> hız sınırı ve Anthropic Console'daki harcama limitidir.
 
 Modele yalnızca harita verisi (konumlar, evler, açılar) ve profil adı gönderilir. Yorumlar önbelleğe alınır; profil ya da ev sistemi değişince yenilenir.
 

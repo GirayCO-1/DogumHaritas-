@@ -10,7 +10,7 @@ import type { HouseSystem, NodeType } from '@/astro/types';
 import { Button, Card, Chip, Divider, Row, Screen, T } from '@/components/ui';
 import { Colors, Radius } from '@/constants/theme';
 import { cityCount } from '@/data/cities';
-import { useAppStore, type AiEffort, type AiMode } from '@/store/useAppStore';
+import { BUILD_PROXY_URL, useAppStore, type AiEffort, type AiMode } from '@/store/useAppStore';
 
 const HOUSE_SYSTEMS: HouseSystem[] = ['placidus', 'koch', 'whole', 'equal', 'porphyry', 'campanus', 'regiomontanus'];
 
@@ -128,7 +128,20 @@ export default function SettingsScreen() {
           </View>
         )}
 
-        {settings.aiMode === 'proxy' && (
+        {settings.aiMode === 'proxy' && BUILD_PROXY_URL ? (
+          <View style={{ gap: 8 }}>
+            <Row gap={6}>
+              <Ionicons name="shield-checkmark" size={16} color={Colors.success} />
+              <T variant="subheading">Uygulama sunucusu kullanılıyor</T>
+            </Row>
+            <T variant="small">
+              Yorumlar uygulamanın kendi sunucusu üzerinden üretilir; senin bir API anahtarı girmene gerek yok.
+            </T>
+            <T variant="caption">{BUILD_PROXY_URL}</T>
+          </View>
+        ) : null}
+
+        {settings.aiMode === 'proxy' && !BUILD_PROXY_URL && (
           <View style={{ gap: 8 }}>
             <T variant="label">Vekil Sunucu Adresi</T>
             <T variant="small">Anahtarı sunucuda tutmak için server/ klasöründeki örnek vekili yayınla ve adresini gir (Play Store dağıtımı için önerilen yol).</T>

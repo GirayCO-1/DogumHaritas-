@@ -66,3 +66,11 @@ export const Radius = {
 } as const;
 
 export const MaxContentWidth = 720;
+
+/**
+ * Sekme çubuğunun güvenli alan payı HARİÇ yüksekliği.
+ * Gerçek yükseklik = TabBarBaseHeight + insets.bottom (Android'de gezinme
+ * çubuğu, iPhone'da ana ekran çizgisi). Hem çubuğun kendisi hem de sekme
+ * ekranlarının alt boşluğu bu değeri kullanır.
+ */
+export const TabBarBaseHeight = 58;
